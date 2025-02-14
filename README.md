@@ -2,6 +2,12 @@
 
 A new Flutter project.
 
+## Clone repository
+git clone https://github.com/UNIZAR-30226-2025-11/FrontAndroid.git
+
+## Run
+import project on Android Studio and emulate in Pixel 9 Oreo
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
