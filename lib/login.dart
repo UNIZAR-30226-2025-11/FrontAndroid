@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       print("Login successful: ${data['message']}");
-      // Aquí puedes redirigir a otra pantalla si el login es exitoso
+      // Redirigir a otra pantalla si el login es exitoso
     } else {
       print("Error: ${response.body}");
     }
