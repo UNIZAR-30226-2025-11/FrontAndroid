@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/homePage.dart';
 import 'login.dart';
 import 'signup.dart';
 
@@ -28,10 +29,10 @@ class HomeScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 //Descomentar cuando este lista
-                //Navigator.push(
-                  //context,
-                  //MaterialPageRoute(builder: (context) => SignUpScreen()),
-                //);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SignUpScreen()),
+                );
               },
               child: Text('Sign Up'),
             ),
@@ -45,6 +46,17 @@ class HomeScreen extends StatelessWidget {
               },
               child: Text('Log In'),
             ),
+            SizedBox(height: 20),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MainScreen())
+                  );
+                },
+                child: Text('TESTS')
+            ),
+
           ],
         ),
       ),
