@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'homePage.dart';
+import 'login.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -32,9 +33,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
           ],
         ),
-        duration: Duration(seconds: 10), // Stays longer but can be dismissed
+        duration: Duration(seconds: 10),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.redAccent, // Makes it more visible
+        backgroundColor: Colors.redAccent,
       ),
     );
   }
@@ -58,12 +59,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final data = jsonDecode(response.body);
       print("Signup successful: ${data['message']}");
 
-      // Navigate to HomeScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
       );
-
     } else {
       _showSnackBar("Error: ${response.body}");
     }
@@ -96,6 +95,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ElevatedButton(
               onPressed: signUp,
               child: Text("Sign Up"),
+            ),
+            SizedBox(height: 20),
+
+            // Mensaje con "Log in" como enlace
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Already have an account? "), // Texto sin enlace
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
+                  },
+                  child: Text(
+                    "Log in",
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

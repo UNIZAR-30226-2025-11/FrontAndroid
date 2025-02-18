@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -24,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       print("Login successful: ${data['message']}");
+
       // Redirigir a otra pantalla si el login es exitoso
     } else {
       print("Error: ${response.body}");
@@ -53,10 +55,36 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: login,
               child: Text("Log In"),
             ),
+            SizedBox(height: 20),
+
+            // Mensaje con "Sign up" como enlace
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Don't have an account? "), // Texto sin enlace
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignUpScreen()),
+                    );
+                  },
+                  child: Text(
+                    "Sign up",
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 }
+
 

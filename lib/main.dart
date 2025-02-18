@@ -28,7 +28,6 @@ class HomeScreen extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                //Descomentar cuando este lista
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => SignUpScreen()),
