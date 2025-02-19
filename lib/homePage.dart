@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/game.dart';
 import 'login.dart';
 
 class MainScreen extends StatefulWidget {
@@ -116,6 +117,10 @@ class _MainScreenState extends State<MainScreen> {
             ElevatedButton(
               onPressed: () {
                 // Implement start new game logic
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => GameScreen()),
+                );
               },
               child: Text("Start New Game"),
             ),
