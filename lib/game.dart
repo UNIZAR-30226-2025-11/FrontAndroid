@@ -53,45 +53,46 @@ class _GameScreenState extends State<GameScreen> {
     {'Card7': 7},
   ];
 
+  final ScrollController _scrollController = ScrollController(); // Controlador para el Scrollbar
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Game Info')),
       body: Stack(
         children: [
-          // Coloca los jugadores en diferentes posiciones
           if (players.length >= 1)
             Positioned(
               top: 50,
-              left: MediaQuery.of(context).size.width / 2 - 60,  // Centro superior
+              left: MediaQuery.of(context).size.width / 2 - 60,
               child: buildPlayerCard(players[0]),
             ),
           if (players.length >= 2)
             Positioned(
-              bottom: 300,
-              left: 50,  // Inferior izquierda
+              bottom: 350,
+              left: 50,
               child: buildPlayerCard(players[1]),
             ),
           if (players.length >= 3)
             Positioned(
-              bottom: 300,
-              right: 50,  // Inferior derecha
+              bottom: 350,
+              right: 50,
               child: buildPlayerCard(players[2]),
             ),
 
           // Barra deslizable de cartas
-          // Barra deslizable de cartas
-
-          // Barra deslizable de cartas
           Positioned(
             bottom: 20,
-            left: MediaQuery.of(context).size.width / 2 - 150, // Alinea las cartas en la parte inferior
+            left: MediaQuery.of(context).size.width / 2 - 150,
             child: Container(
-              height: 180,  // Altura del contenedor que contiene las cartas
+              height: 180,
+              width: 300, // Define un ancho para la barra de cartas
               child: Scrollbar(
-                // Usamos un controlador para la barra de desplazamiento
+                controller: _scrollController, // Asigna el controlador
+                thumbVisibility: true, // Hace visible el scrollbar
                 child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,  // Desplazamiento horizontal
+                  controller: _scrollController, // Usa el mismo controlador
+                  scrollDirection: Axis.horizontal,
                   child: Row(
                     children: cards.map((card) {
                       return Container(
@@ -122,7 +123,6 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // Método para construir la tarjeta del jugador
   Widget buildPlayerCard(Map<String, dynamic> player) {
     return Container(
       margin: EdgeInsets.all(8.0),
