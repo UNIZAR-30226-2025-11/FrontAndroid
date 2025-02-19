@@ -57,14 +57,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print("Signup successful: ${data['message']}");
-
+      //print("Signup successful: ${data['message']}");
+      print("Signup successful");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
       );
     } else {
-      _showSnackBar("Error: ${response.body}");
+      //_showSnackBar("Error: ${response.body}");
+      _showSnackBar("Error: failed sign up");
     }
   }
 

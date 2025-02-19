@@ -12,6 +12,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  void _showSnackBar(String message) {
+    var scaffoldMessenger = ScaffoldMessenger.of(context);
+    scaffoldMessenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.error, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(message, style: TextStyle(color: Colors.white)),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, color: Colors.white),
+              onPressed: () {
+                scaffoldMessenger.hideCurrentSnackBar();
+              },
+            ),
+          ],
+        ),
+        duration: Duration(seconds: 10),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+
   Future<void> login() async {
     final response = await http.post(
       Uri.parse('http://10.0.2.2:3000/login'),
@@ -24,11 +50,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print("Login successful: ${data['message']}");
-
+      //print("Login successful: ${data['message']}");
+      print("Login successful");
       // Redirigir a otra pantalla si el login es exitoso
     } else {
-      print("Error: ${response.body}");
+      //print("Error: ${response.body}");
+      _showSnackBar("Error: wrong username or password");
     }
   }
 
