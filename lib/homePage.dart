@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_example/game.dart';
+import 'game.dart';
+import 'statistics.dart';
 import 'login.dart';
+import 'shop.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -73,6 +75,16 @@ class _MainScreenState extends State<MainScreen> {
                 onTap: () {},
               ),
               ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => StatisticsScreen()),
+                  );
+                },
+              ),
+              ListTile(
                 leading: Icon(Icons.logout),
                 title: Text("Logout"),
                 onTap: _showLogOutBar,
@@ -123,6 +135,16 @@ class _MainScreenState extends State<MainScreen> {
                 );
               },
               child: Text("Start New Game"),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ShopScreen()), // Redirect to login
+                  );
+                },
+                child: Text("Online Shop"),
             ),
           ],
         ),
