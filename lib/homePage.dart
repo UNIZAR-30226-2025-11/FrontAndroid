@@ -106,6 +106,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+
         title: Text("Main Screen"),
         automaticallyImplyLeading: false, // Removes the back button
         actions: [
@@ -115,6 +116,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
+      backgroundColor: Color(0xFF9D0514),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
