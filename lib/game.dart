@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -57,6 +58,33 @@ class _GameScreenState extends State<GameScreen> {
   List<String> selectedCards = [];
 
 
+  int remainingTime = 60;
+  late Timer timer;
+
+  @override
+  void initState() {
+    super.initState();
+    startTimer();
+  }
+
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (remainingTime > 0) {
+          remainingTime--;
+        } else {
+          timer.cancel();
+          endTurn();
+        }
+      });
+    });
+  }
+
+  void endTurn() {
+    // Lógica para terminar el turno del jugador actual
+    print("Turno terminado");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,6 +136,20 @@ class _GameScreenState extends State<GameScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 220,
+            left: MediaQuery.of(context).size.width / 2 - 15,
+            child: SizedBox(
+              width: 25,
+              height: 25,
+              child: CircularProgressIndicator(
+                value: remainingTime / 60,
+                backgroundColor: Colors.grey,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                strokeWidth: 25,
               ),
             ),
           ),
@@ -212,5 +254,4 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
   }
-
 }
