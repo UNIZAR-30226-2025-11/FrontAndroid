@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
 
 class LoginScreen extends StatefulWidget {
+  final IO.Socket socket;
+
+  LoginScreen({required this.socket});
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  late IO.Socket socket;
+
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -93,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => SignUpScreen()),
+                      MaterialPageRoute(builder: (context) => SignUpScreen(socket: socket)),
                     );
                   },
                   child: Text(

@@ -1,13 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_example/game.dart';
 import 'login.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class MainScreen extends StatefulWidget {
+  final IO.Socket socket;
+
+  MainScreen({required this.socket});
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
+  late IO.Socket socket;
   void _showLogOutBar() {
     Navigator.pop(context); // Close the profile drawer before showing the SnackBar
 
@@ -26,7 +33,7 @@ class _MainScreenState extends State<MainScreen> {
                 scaffoldMessenger.hideCurrentSnackBar();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()), // Redirect to login
+                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket)), // Redirect to login
                 );
               },
               child: Text("YES", style: TextStyle(color: Colors.white)),

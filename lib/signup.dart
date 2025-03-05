@@ -3,16 +3,48 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'homePage.dart';
 import 'login.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SignUpScreen extends StatefulWidget {
+  final IO.Socket socket;
+
+  SignUpScreen({required this.socket});
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  late IO.Socket socket;
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController rptPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar el socket
+    socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+
+    socket.connect();
+    socket.on('connect', (_) {
+      print('Conectado a Socket.IO en SignUp');
+    });
+
+    socket.on('disconnect', (_) {
+      print('Desconectado de Socket.IO');
+    });
+
+    // Puedes añadir más eventos aquí si necesitas
+  }
+
+  @override
+  void dispose() {
+    socket.disconnect();
+    super.dispose();
+  }
 
   void _showSnackBar(String message) {
     var scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -61,7 +93,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print("Signup successful");
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+        MaterialPageRoute(builder: (context) => MainScreen(socket: socket,)), // Placeholder
       );
     } else {
       //_showSnackBar("Error: ${response.body}");
@@ -108,7 +140,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      MaterialPageRoute(builder: (context) => LoginScreen(socket: socket)),
                     );
                   },
                   child: Text(
