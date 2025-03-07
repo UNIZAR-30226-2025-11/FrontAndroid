@@ -88,7 +88,8 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Game Info')),
+      appBar: AppBar(title: Text('Game Info'),
+        automaticallyImplyLeading: false,),
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [
