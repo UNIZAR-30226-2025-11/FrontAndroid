@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/editProfile.dart';
 import 'game.dart';
 import 'statistics.dart';
 import 'login.dart';
@@ -79,16 +80,10 @@ class _MainScreenState extends State<MainScreen> {
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text("Edit profile"),
-                onTap: () {},
-              ),
-              SizedBox(height: 20),
-              ListTile(
-                leading: Icon(Icons.shopping_cart),
-                title: Text("Shop"),
                 onTap: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => ShopScreen()),
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditProfileScreen()),
                   );
                 },
               ),
@@ -154,6 +149,16 @@ class _MainScreenState extends State<MainScreen> {
                     );
                   },
                   child: Text("Join Game"),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ShopScreen()),
+                    );
+                  },
+                  child: Text("Shop"),
                 ),
               ],
             ),
