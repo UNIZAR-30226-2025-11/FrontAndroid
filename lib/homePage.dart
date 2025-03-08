@@ -1,9 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_example/game.dart';
+import 'package:flutter_example/editProfile.dart';
+import 'game.dart';
+import 'statistics.dart';
 import 'login.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'shop.dart';
+import 'joinGame.dart';
 
 class MainScreen extends StatefulWidget {
   final IO.Socket socket;
@@ -33,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
                 scaffoldMessenger.hideCurrentSnackBar();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket)), // Redirect to login
+                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket,)), // Redirect to login
                 );
               },
               child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -70,25 +74,31 @@ class _MainScreenState extends State<MainScreen> {
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               SizedBox(height: 20),
               ListTile(
-                leading: Icon(Icons.account_circle),
-                title: Text("View Profile"),
-                onTap: () {},
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => StatisticsScreen()),
+                  );
+                },
               ),
+              SizedBox(height: 20),
               ListTile(
                 leading: Icon(Icons.settings),
-                title: Text("Account Settings"),
-                onTap: () {},
+                title: Text("Edit profile"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => EditProfileScreen()),
+                  );
+                },
               ),
+              SizedBox(height: 20),
               ListTile(
                 leading: Icon(Icons.logout),
                 title: Text("Logout"),
                 onTap: _showLogOutBar,
-              ),
-              SizedBox(height: 20),
-              ListTile(
-                leading: Icon(Icons.delete),
-                title: Text('Delete account'),
-                onTap: () {},
               ),
             ],
           ),
@@ -103,36 +113,65 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: Text("Main Screen"),
         automaticallyImplyLeading: false, // Removes the back button
-        actions: [
-          IconButton(
-            icon: Icon(Icons.account_circle, size: 30),
-            onPressed: _openProfileDrawer,
+      ),
+      backgroundColor: Color(0xFF9D0514),
+      body: Stack(
+        children: [
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Row(
+              children: [
+                Text('username', style: TextStyle(color: Colors.white, fontSize: 18)),
+                SizedBox(width: 8),
+                Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+                SizedBox(width: 4),
+                Text('5 coins', style: TextStyle(color: Colors.white, fontSize: 18)),
+                IconButton(
+                  icon: Icon(Icons.person, size: 30, color: Colors.white), // Profile button
+                  onPressed: _openProfileDrawer,
+                ),
+              ],
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // Implement start new game logic
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => GameScreen()),
+                    );
+                  },
+                  child: Text("New Game"),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => JoinGameScreen()),
+                    );
+                  },
+                  child: Text("Join Game"),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ShopScreen()),
+                    );
+                  },
+                  child: Text("Shop"),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                // Implement join game logic
-              },
-              child: Text("Join Game"),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Implement start new game logic
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => GameScreen()),
-                );
-              },
-              child: Text("Start New Game"),
-            ),
-          ],
-        ),
       ),
     );
   }
