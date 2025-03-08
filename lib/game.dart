@@ -46,17 +46,17 @@ class _GameScreenState extends State<GameScreen> {
     {'Player3': 4},
   ];
   List<dynamic> cards = [
-    {'Card1': 1},
-    {'Card2': 2},
-    {'Card3': 3},
-    {'Card4': 4},
-    {'Card5': 5},
-    {'Card6': 6},
-    {'Card7': 7},
+    {'Attack': 1},
+    {'BeardCat': 2},
+    {'Cattermelon': 3},
+    {'Nope': 4},
+    {'Nope': 5},
+    {'Skip': 6},
+    {'Tacocat': 7},
   ];
 
   final ScrollController _scrollController = ScrollController(); // Controlador para el Scrollbar
-  List<String> selectedCards = [];
+  List<int> selectedCards = [];
 
 
   int remainingTime = 60;
@@ -194,34 +194,36 @@ class _GameScreenState extends State<GameScreen> {
                   child: Row(
                     children: cards.map((card) {
                       String cardName = card.keys.first;
+                      int cardID = card.values.first;
+                      String imagePath = 'assets/images/$cardName.jpg';
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            if (selectedCards.contains(cardName)) {
-                              selectedCards.remove(cardName);
+                            if (selectedCards.contains(cardID)) {
+                              selectedCards.remove(cardID);
                             } else {
-                              selectedCards.add(cardName);
+                              selectedCards.add(cardID);
                             }
                           });
                         },
                         child: Container(
                           margin: EdgeInsets.symmetric(horizontal: 8.0),
-                          padding: EdgeInsets.all(16.0),
+                          //padding: EdgeInsets.all(16.0),
                           height: 150,
                           width: 100,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: selectedCards.contains(cardName) ? Colors.blue : Colors.transparent,
+                              color: selectedCards.contains(cardID) ? Colors.blue : Colors.transparent,
                               width: 3,
                             ),
                           ),
-                          child: Center(
-                            child: Text(
-                              cardName,
-                              style: TextStyle(color: Colors.black, fontSize: 16),
-                              textAlign: TextAlign.center,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              imagePath,
+                              fit: BoxFit.fill,
                             ),
                           ),
                         ),
