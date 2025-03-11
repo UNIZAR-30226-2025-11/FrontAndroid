@@ -19,6 +19,13 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late IO.Socket socket;
+
+  @override
+  void initState() {
+    super.initState();
+    socket = widget.socket; // Asigna el socket correctamente
+  }
+
   void _showLogOutBar() {
     Navigator.pop(context); // Close the profile drawer before showing the SnackBar
 
