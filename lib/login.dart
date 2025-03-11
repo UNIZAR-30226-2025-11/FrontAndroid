@@ -3,6 +3,8 @@ import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'homePage.dart';
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -62,12 +64,17 @@ class _LoginScreenState extends State<LoginScreen> {
       var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
       print(errorMessage);
       _showSnackBar(errorMessage);
+      return;
     }
 
     //print("Login successful: ${data['message']}");
     print("Login successful");
     // Redirigir a otra pantalla si el login es exitoso
-    return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+    );
   }
 
   @override

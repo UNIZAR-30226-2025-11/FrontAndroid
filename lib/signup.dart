@@ -58,6 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }),
     );
 
+
     final data = jsonDecode(response.body);
 
     if (response.statusCode != 201) {
