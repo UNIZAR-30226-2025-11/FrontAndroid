@@ -4,93 +4,91 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-void main() {
-  runApp(MaterialApp(home: GameScreen()));
-}
-
 class GameScreen extends StatefulWidget {
+  final IO.Socket socket;
+
+  GameScreen({required this.socket});
+
   @override
   _GameScreenState createState() => _GameScreenState();
 }
 
-/*
 class _GameScreenState extends State<GameScreen> {
-  List<dynamic> players = [];
-  List<dynamic> cards = [];
+  late IO.Socket socket;
+  bool error = false;
+  String errorMsg = "";
+  List<Map<String, dynamic>> playerCards = [];
+  List<Map<String, dynamic>> players = [];
+  int turn = 0;
+  int timeOut = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    fetchGameData();
-  }
-
-  Future<void> fetchGameData() async {
-    final response = await http.get(Uri.parse('http://10.0.2.2:3000/game/play'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        players = data['players'];
-        cards = data['cards'];
-      });
-    } else {
-      throw Exception('Error al cargar datos');
-    }
-  }
-
- */
-
-class _GameScreenState extends State<GameScreen> {
-  List<dynamic> players = [
-    {'Player1': 3},
-    {'Player2': 5},
-    {'Player3': 4},
-  ];
-  List<dynamic> cards = [
-    {'Attack': 1},
-    {'BeardCat': 2},
-    {'Cattermelon': 3},
-    {'Nope': 4},
-    {'Nope': 5},
-    {'Skip': 6},
-    {'Tacocat': 7},
-  ];
-
-  final ScrollController _scrollController = ScrollController(); // Controlador para el Scrollbar
+  final ScrollController _scrollController = ScrollController();
   List<int> selectedCards = [];
-
-
   int remainingTime = 60;
   late Timer timer;
 
   @override
   void initState() {
     super.initState();
+    socket = widget.socket;
+    setupSocketListeners();
     startTimer();
   }
 
-  void startTimer() {
-    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+  void setupSocketListeners() {
+    socket.on('updateGame', (data) {
       setState(() {
-        if (remainingTime > 0) {
-          remainingTime--;
-        } else {
-          timer.cancel();
-          endTurn();
-        }
+        error = data['error'];
+        errorMsg = data['errorMsg'];
+        playerCards = List<Map<String, dynamic>>.from(data['playerCards']);
+        players = List<Map<String, dynamic>>.from(data['players']);
+        turn = data['turn'];
+        timeOut = data['timeOut'];
       });
     });
   }
 
-  void endTurn() {
-    // Lógica para terminar el turno del jugador actual
-    print("Turno terminado");
+  void sendGameAction(List<int> selectedCards) {
+    // Create a new list of maps
+    List<Map<String, dynamic>> playedCards = selectedCards.map((cardID) {
+      return {'cardID': cardID};  // or use any other structure you need
+    }).toList();
+
+    socket.emit('playMove', {
+      'error': false,
+      'errorMsg': "",
+      'playedCards': playedCards,
+      'lobbyId': 1,
+    });
+  }
+
+
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (remainingTime > 0) {
+        setState(() {
+          remainingTime--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    socket.off('updateGame');
+    timer.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Game Info'),
-        automaticallyImplyLeading: false,),
+      appBar: AppBar(
+        title: Text('Game Info'),
+        automaticallyImplyLeading: false,
+      ),
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [
@@ -164,7 +162,7 @@ class _GameScreenState extends State<GameScreen> {
                 ElevatedButton(
                   onPressed: selectedCards.length >= 1 && selectedCards.length <= 3
                       ? () {
-                    // Acción de jugar cartas
+                    sendGameAction(selectedCards);
                   }
                       : null,
                   child: Text('Play Cards'),
@@ -192,7 +190,7 @@ class _GameScreenState extends State<GameScreen> {
                   controller: _scrollController,
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: cards.map((card) {
+                    children: playerCards.map((card) {
                       String cardName = card.keys.first;
                       int cardID = card.values.first;
                       String imagePath = 'assets/images/$cardName.jpg';
@@ -208,7 +206,6 @@ class _GameScreenState extends State<GameScreen> {
                         },
                         child: Container(
                           margin: EdgeInsets.symmetric(horizontal: 8.0),
-                          //padding: EdgeInsets.all(16.0),
                           height: 150,
                           width: 100,
                           decoration: BoxDecoration(

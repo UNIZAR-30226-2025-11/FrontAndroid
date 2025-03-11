@@ -150,7 +150,7 @@ class _MainScreenState extends State<MainScreen> {
                     // Implement start new game logic
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => GameScreen()),
+                      MaterialPageRoute(builder: (context) => GameScreen(socket: socket)),
                     );
                   },
                   child: Text("New Game"),
