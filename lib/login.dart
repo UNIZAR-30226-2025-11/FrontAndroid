@@ -3,6 +3,8 @@ import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'homePage.dart';
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -39,8 +41,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
+    // NOTA: Resulta que SI que la IP para localhost debe ser 10.0.2.2
+    // Es una cosa del emulador, que es el alias para referirse al loopback del
+    // anfitrión
+    // https://stackoverflow.com/questions/55785581/socketexception-os-error-connection-refused-errno-111-in-flutter-using-djan:w
+    // También, que esto se pueda cambiar desde otro fichero y que lo coja del entorno
+    const URL = "http://10.0.2.2:8000/login";
+
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3000/login'),
+      Uri.parse(URL),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,
@@ -48,15 +57,24 @@ class _LoginScreenState extends State<LoginScreen> {
       }),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      //print("Login successful: ${data['message']}");
-      print("Login successful");
-      // Redirigir a otra pantalla si el login es exitoso
-    } else {
-      //print("Error: ${response.body}");
-      _showSnackBar("Error: wrong username or password");
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200){
+      // Saca el mensaje de error del cuerpo
+      var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
+      print(errorMessage);
+      _showSnackBar(errorMessage);
+      return;
     }
+
+    //print("Login successful: ${data['message']}");
+    print("Login successful");
+    // Redirigir a otra pantalla si el login es exitoso
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+    );
   }
 
   @override

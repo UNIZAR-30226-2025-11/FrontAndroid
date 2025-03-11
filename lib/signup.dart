@@ -46,8 +46,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    // Ver comments en login.dart/login()
+    const URL = "http://10.0.2.2:8000/register";
+
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3000/signup'),
+      Uri.parse(URL),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,
@@ -55,15 +58,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }),
     );
 
-    if (response.statusCode == 200) {
-      print("Signup successful");
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
-      );
-    } else {
-      _showSnackBar("Error: failed sign up");
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 201) {
+      var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
+      print(errorMessage);
+      _showSnackBar(errorMessage);
+      return;
     }
+
+    //print("Signup successful: ${data['message']}");
+    print("Signup successful");
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+    );
   }
 
   @override
