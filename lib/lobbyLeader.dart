@@ -67,7 +67,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
       "lobbyId": widget.lobbyId,
     };
 
-    widget.socket.emit('start-game', startGameRequest);
+    //widget.socket.emit('start-game', startGameRequest);
 
     widget.socket.once('start-game', (data) {
       // Respuesta del servidor a start-game
