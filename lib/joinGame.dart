@@ -1,32 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/lobby.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class JoinGameScreen extends StatefulWidget {
+  final IO.Socket socket;
+
+  JoinGameScreen({required this.socket});
+
   @override
   _JoinGameState createState() => _JoinGameState();
 }
 
 class _JoinGameState extends State<JoinGameScreen> {
   final TextEditingController roomCodeController = TextEditingController();
+  String? errorMessage;
 
-  Future<void> joinGame() async {
-    final response = await http.put(
-      Uri.parse('http://10.0.2.2:3000/game'), // Replace with actual endpoint
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        //"username": usernameController.text,
-        "roomCode": roomCodeController.text,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      // Handle successful response
-      print("Joined game successfully");
-    } else {
-      // Handle error
-      print("Failed to join game");
+  void joinGame() {
+    String lobbyId = roomCodeController.text.trim();
+    if (lobbyId.isEmpty) {
+      setState(() => errorMessage = "Please enter a room code");
+      return;
     }
+
+    // Enviar solicitud de unión al servidor a través del socket
+    widget.socket.emit('join-lobby', {
+      "error": false,
+      "errorMsg": "",
+      "lobbyId": lobbyId
+    });
+
+    // Escuchar la respuesta del servidor
+    widget.socket.once('join-lobby', (data) {
+      if (data["error"] == false) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WaitingScreen(socket: widget.socket, lobbyId: lobbyId),
+          ),
+        );
+      } else {
+        setState(() => errorMessage = data["errorMsg"]);
+      }
+    });
   }
 
   @override
@@ -69,6 +86,13 @@ class _JoinGameState extends State<JoinGameScreen> {
                     onSubmitted: (value) => joinGame(),
                   ),
                 ),
+                if (errorMessage != null) ...[
+                  SizedBox(height: 10),
+                  Text(
+                    errorMessage!,
+                    style: TextStyle(color: Colors.yellow, fontSize: 16),
+                  ),
+                ],
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: joinGame,
@@ -82,3 +106,5 @@ class _JoinGameState extends State<JoinGameScreen> {
     );
   }
 }
+
+

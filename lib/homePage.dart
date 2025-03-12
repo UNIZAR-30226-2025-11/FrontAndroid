@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_example/editProfile.dart';
+import 'package:flutter_example/lobbyLeader.dart';
 import 'game.dart';
 import 'statistics.dart';
 import 'login.dart';
@@ -13,6 +14,7 @@ class MainScreen extends StatefulWidget {
   final IO.Socket socket;
 
   MainScreen({required this.socket});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
@@ -26,8 +28,85 @@ class _MainScreenState extends State<MainScreen> {
     socket = widget.socket; // Asigna el socket correctamente
   }
 
+  // Método para crear una sala de lobby
+  void _createLobby(int maxPlayers) {
+    final lobbyRequest = {
+      'error': false,
+      'errorMsg': '',
+      'maxPlayers': maxPlayers,
+    };
+
+    socket.emit("create-lobby", [lobbyRequest]);
+
+// Escuchar la respuesta del servidor
+    socket.once("create-lobby", (dynamic response) {
+      if (response != null && response['error'] == false) {
+        String lobbyId = response['lobbyId'];
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StartGameScreen(
+              socket: socket,
+              lobbyId: lobbyId,
+            ),
+          ),
+        );
+      } else {
+        String errorMsg = response != null ? response['errorMsg'] : "Error creating the lobby.";
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    });
+  }
+
+  // Método para mostrar el dialogo de selección de jugadores
+  Future<int?> _showPlayerSelectionDialog(BuildContext context) async {
+    return showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Select Number of Players"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Choose how many players can join your lobby."),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _createLobby(2),
+                      child: Text("2"),
+
+                    ),
+                  ),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _createLobby(3),
+                      child: Text("3"),
+                    ),
+                  ),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _createLobby(4),
+                      child: Text("4"),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+
+  // Método para mostrar el Snackbar de confirmación de logout
   void _showLogOutBar() {
-    Navigator.pop(context); // Close the profile drawer before showing the SnackBar
+    Navigator.pop(context); // Cierra el drawer de perfil antes de mostrar el Snackbar
 
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
@@ -44,14 +123,14 @@ class _MainScreenState extends State<MainScreen> {
                 scaffoldMessenger.hideCurrentSnackBar();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket,)), // Redirect to login
+                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket,)), // Redirige al login
                 );
               },
               child: Text("YES", style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () {
-                scaffoldMessenger.hideCurrentSnackBar(); // Dismiss the SnackBar
+                scaffoldMessenger.hideCurrentSnackBar(); // Descartar el Snackbar
               },
               child: Text("NO", style: TextStyle(color: Colors.white70)),
             ),
@@ -59,11 +138,12 @@ class _MainScreenState extends State<MainScreen> {
         ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.redAccent,
-        duration: Duration(days: 365), // Keeps it open until user interacts
+        duration: Duration(days: 365), // Lo mantiene abierto hasta que el usuario interactúe
       ),
     );
   }
 
+  // Método para abrir el drawer de perfil
   void _openProfileDrawer() {
     showModalBottomSheet(
       context: context,
@@ -119,7 +199,7 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Main Screen"),
-        automaticallyImplyLeading: false, // Removes the back button
+        automaticallyImplyLeading: false, // Remueve el botón de regreso
       ),
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
@@ -135,7 +215,7 @@ class _MainScreenState extends State<MainScreen> {
                 SizedBox(width: 4),
                 Text('5 coins', style: TextStyle(color: Colors.white, fontSize: 18)),
                 IconButton(
-                  icon: Icon(Icons.person, size: 30, color: Colors.white), // Profile button
+                  icon: Icon(Icons.person, size: 30, color: Colors.white), // Botón de perfil
                   onPressed: _openProfileDrawer,
                 ),
               ],
@@ -146,24 +226,21 @@ class _MainScreenState extends State<MainScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  onPressed: () {
-                    // Implement start new game logic
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => GameScreen(socket: socket)),
-                    );
+                  onPressed: () async {
+                    // Se ejecuta cuando se crea una nueva sala
+                    int? players = await _showPlayerSelectionDialog(context);
                   },
-                  child: Text("New Game"),
+                  child: Text("New Lobby"),
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => JoinGameScreen()),
+                      MaterialPageRoute(builder: (context) => JoinGameScreen(socket: socket)),
                     );
                   },
-                  child: Text("Join Game"),
+                  child: Text("Join Lobby"),
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
