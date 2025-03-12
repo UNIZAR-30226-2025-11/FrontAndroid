@@ -16,9 +16,26 @@ class MyApp extends StatelessWidget {
     'autoConnect': false,
   });
 
+
   MyApp() {
     socket.connect();
-    socket.on('connect', (_) => print('Conectado al servidor Socket.IO'));
+    final lobbyRequest = {
+      'error': false,
+      'errorMsg': '',
+      'maxPlayers': 3,
+    };
+    socket.on('connect', (_) =>
+      socket.emit("create-lobby", [lobbyRequest]));
+    //socket.on('connect', (_) => print('Conectado al servidor Socket.IO'));
+
+    print('Antes de emit');
+    print('Enviando evento create-lobby...');
+    socket.emit("create-lobby", [lobbyRequest]);
+
+    // Esperar la respuesta (ACK) del servidor
+    socket.once("create-lobby", (response) {
+      print("ACK recibido del servidor: $response");
+    });
     socket.on('disconnect', (_) => print('Desconectado del servidor'));
   }
 
@@ -77,6 +94,39 @@ class HomeScreen extends StatelessWidget {
                 },
                 child: Text('TESTS')
             ),
+
+            ElevatedButton(
+              onPressed: () {
+                if (socket.connected) {
+                  final lobbyRequest = {
+                    'error': false,
+                    'errorMsg': '',
+                    'maxPlayers': 3,
+                  };
+                  print('Antes de emit');
+                  socket.emit("create-lobby", [lobbyRequest]);
+                  print('dsp');
+                  // Esperar la respuesta (ACK) del servidor
+                  socket.once("create-lobby", (response) {
+                    print("ACK recibido del servidor: $response");
+                  });
+                } else {
+                  print('El socket no está conectado, intentando reconectar...');
+                  socket.connect();
+                  socket.on('connect', (_) {
+                    print('Conectado al servidor, enviando evento...');
+                    final lobbyRequest = {
+                      'error': false,
+                      'errorMsg': '',
+                      'maxPlayers': 3,
+                    };
+                    socket.emit("create-lobby", [lobbyRequest]);
+                  });
+                }
+              },
+              child: Text('Enviar Evento'),
+            ),
+
 
           ],
         ),

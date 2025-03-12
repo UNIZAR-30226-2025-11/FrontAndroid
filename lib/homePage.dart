@@ -35,12 +35,15 @@ class _MainScreenState extends State<MainScreen> {
       'errorMsg': '',
       'maxPlayers': maxPlayers,
     };
-
+    print('Antes de emit');
     socket.emit("create-lobby", [lobbyRequest]);
+    print('después');
 
 // Escuchar la respuesta del servidor
-    socket.once("create-lobby", (dynamic response) {
+    socket.on("create-lobby", (dynamic response) {
+      print('once');
       if (response != null && response['error'] == false) {
+        print('IF');
         String lobbyId = response['lobbyId'];
         Navigator.push(
           context,
@@ -51,6 +54,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         );
+
       } else {
         String errorMsg = response != null ? response['errorMsg'] : "Error creating the lobby.";
         ScaffoldMessenger.of(context).showSnackBar(
