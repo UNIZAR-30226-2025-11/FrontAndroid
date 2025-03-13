@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import 'homePage.dart';
+
 
 class LoginScreen extends StatefulWidget {
   final IO.Socket socket;
@@ -54,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
         "password": passwordController.text,
       }),
     );
-
+    final data = jsonDecode(response.body);
     if (response.statusCode != 200){
       // Saca el mensaje de error del cuerpo
       var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
@@ -69,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+      MaterialPageRoute(builder: (context) => MainScreen(socket:socket)), // Placeholder
     );
   }
 

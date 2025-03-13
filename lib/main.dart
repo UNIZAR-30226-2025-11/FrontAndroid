@@ -11,7 +11,13 @@ void main() {
 
 class MyApp extends StatelessWidget {
 
-  final IO.Socket socket = IO.io('http://10.0.2.2:8000');
+  final IO.Socket socket = IO.io('http://10.0.2.2:8000',
+  IO.OptionBuilder()
+    .setTransports(['websocket'])
+    .enableForceNew()
+    .disableAutoConnect()
+    .build()
+  );
 
 
   MyApp() {

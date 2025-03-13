@@ -77,7 +77,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+      MaterialPageRoute(builder: (context) => MainScreen(socket: socket)), // Placeholder
     );
   }
 
