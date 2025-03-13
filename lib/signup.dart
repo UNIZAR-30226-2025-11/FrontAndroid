@@ -20,31 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController rptPasswordController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    // Inicializar el socket
-    socket = IO.io('http://10.0.2.2:3000', <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': false,
-    });
 
-    socket.connect();
-    socket.on('connect', (_) {
-      print('Conectado a Socket.IO en SignUp');
-    });
-
-    socket.on('disconnect', (_) {
-      print('Desconectado de Socket.IO');
-    });
-
-    // Puedes añadir más eventos aquí si necesitas
-  }
-
-  @override
-  void dispose() {
-    socket.disconnect();
-    super.dispose();
-  }
 
   void _showSnackBar(String message) {
     var scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -79,7 +55,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3000/signup'),
+      Uri.parse('http://10.0.2.2:5000/register'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_example/game.dart'; // Importa la pantalla de juego
@@ -36,7 +37,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
         // Si no hay error, navegar a la pantalla del juego
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(socket: widget.socket)),
+          MaterialPageRoute(builder: (context) => GameScreen(socket: widget.socket,lobbyId: widget.lobbyId,)),
         );
       } else {
         // Si hay un error, mostrar un mensaje

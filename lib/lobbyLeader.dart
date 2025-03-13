@@ -74,7 +74,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
       if (data['error'] == false) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(socket: widget.socket)),
+          MaterialPageRoute(builder: (context) => GameScreen(socket: widget.socket,lobbyId: widget.lobbyId,)),
         );
       } else {
         setState(() {
