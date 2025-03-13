@@ -55,15 +55,22 @@ class _LoginScreenState extends State<LoginScreen> {
       }),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      //print("Login successful: ${data['message']}");
-      print("Login successful");
-      // Redirigir a otra pantalla si el login es exitoso
-    } else {
-      //print("Error: ${response.body}");
-      _showSnackBar("Error: wrong username or password");
+    if (response.statusCode != 200){
+      // Saca el mensaje de error del cuerpo
+      var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
+      print(errorMessage);
+      _showSnackBar(errorMessage);
+      return;
     }
+
+    //print("Login successful: ${data['message']}");
+    print("Login successful");
+    // Redirigir a otra pantalla si el login es exitoso
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => MainScreen()), // Placeholder
+    );
   }
 
   @override
