@@ -45,7 +45,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void setupSocketListeners() {
+    print("Listens ");
     socket.on('game-state', (data) {
+      print("game-state");
       setState(() {
         error = data['error'];
         errorMsg = data['errorMsg'];
@@ -167,6 +169,8 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+
+
   void startTimer() {
     timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (remainingTime > 0) {
@@ -175,6 +179,8 @@ class _GameScreenState extends State<GameScreen> {
         });
       } else {
         timer.cancel();
+        List<int> empty = [];
+        sendGameAction(empty);
       }
     });
   }
@@ -261,6 +267,8 @@ class _GameScreenState extends State<GameScreen> {
                 ElevatedButton(
                   onPressed: () {
                     // Acción de robar carta
+                    List<int> empty = [];
+                    sendGameAction(empty);
                   },
                   child: Text('Steal a Card'),
                 ),
