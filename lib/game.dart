@@ -45,7 +45,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void setupSocketListeners() {
-    socket.on('updateGame', (data) {
+    socket.on('game-state', (data) {
       setState(() {
         error = data['error'];
         errorMsg = data['errorMsg'];
@@ -181,7 +181,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
-    socket.off('updateGame');
+    socket.off('game-state');
     timer.cancel();
     super.dispose();
   }

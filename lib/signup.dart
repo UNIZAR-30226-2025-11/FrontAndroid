@@ -20,6 +20,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController rptPasswordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    socket = widget.socket; // Asigna el socket correctamente
+  }
+
+  @override
 
 
   void _showSnackBar(String message) {

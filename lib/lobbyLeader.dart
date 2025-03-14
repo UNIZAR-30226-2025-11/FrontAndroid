@@ -37,7 +37,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
   }
 
   // Función para enviar el "start-lobby" y esperar la respuesta
-  Future<void> startLobby() async {
+  void startLobby() {
     final Map<String, dynamic> startLobbyRequest = {
       "error": false,
       "errorMsg": "",
@@ -46,30 +46,29 @@ class _StartGameScreenState extends State<StartGameScreen> {
 
     widget.socket.emit('start-lobby', startLobbyRequest);
 
-    widget.socket.once('start-lobby', (data) {
+    widget.socket.on('start-lobby', (data) {
       // Respuesta del servidor a start-lobby
       if (data['error'] == false) {
         // Enviar start-game si el servidor respondió correctamente
-        startGame();
+        print("lobby started");
       } else {
         setState(() {
           errorMsg = data['errorMsg'];
         });
       }
     });
-  }
 
-  // Función para enviar el "start-game"
-  Future<void> startGame() async {
     final Map<String, dynamic> startGameRequest = {
       "error": false,
       "errorMsg": "",
       "lobbyId": widget.lobbyId,
     };
 
+    print("aa");
+
     //widget.socket.emit('start-game', startGameRequest);
 
-    widget.socket.once('start-game', (data) {
+    widget.socket.on('start-game', (data) {
       // Respuesta del servidor a start-game
       if (data['error'] == false) {
         Navigator.pushReplacement(
@@ -83,6 +82,8 @@ class _StartGameScreenState extends State<StartGameScreen> {
       }
     });
   }
+
+
 
   @override
   Widget build(BuildContext context) {
