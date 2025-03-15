@@ -16,6 +16,7 @@ class StartGameScreen extends StatefulWidget {
 class _StartGameScreenState extends State<StartGameScreen> {
   String? errorMsg; // Variable para mostrar errores
   List<String> players = []; // Lista de jugadores en el lobby
+  Map<String, dynamic>? initialGameState;
 
   @override
   void initState() {
@@ -67,13 +68,19 @@ class _StartGameScreenState extends State<StartGameScreen> {
     print("aa");
 
     //widget.socket.emit('start-game', startGameRequest);
+    widget.socket.on('game-state', (data) {
+      setState(() {
+        initialGameState = data;
+      });
+    });
 
     widget.socket.on('start-game', (data) {
       // Respuesta del servidor a start-game
       if (data['error'] == false) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(socket: widget.socket,lobbyId: widget.lobbyId,)),
+          MaterialPageRoute(builder: (context) => GameScreen(socket:
+          widget.socket,lobbyId: widget.lobbyId,initialGameState: initialGameState ?? {},)),
         );
       } else {
         setState(() {
@@ -81,6 +88,8 @@ class _StartGameScreenState extends State<StartGameScreen> {
         });
       }
     });
+
+
   }
 
 

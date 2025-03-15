@@ -15,8 +15,9 @@ class GameScreen extends StatefulWidget {
   final String lobbyId;
   final String username="user";
   final int coins=3;
+  final Map<String, dynamic> initialGameState;
 
-  GameScreen({required this.socket, required this.lobbyId});
+  GameScreen({required this.socket, required this.lobbyId, required this.initialGameState});
 
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -40,6 +41,19 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     socket = widget.socket;
+    if (widget.initialGameState.isNotEmpty) {
+      dynamic data = widget.initialGameState;
+      setState(() {
+        error = data['error'];
+        errorMsg = data['errorMsg'];
+        playerCards = List<String>.from(data['playerCards']);
+        players = (data['players'] as List)
+            .map((player) => PlayerJSON.fromJson(player))
+            .toList();
+        turn = data['turn'];
+        timeOut = data['timeOut'];
+      });
+    }
     setupSocketListeners();
     startTimer();
   }
@@ -91,7 +105,7 @@ class _GameScreenState extends State<GameScreen> {
 
     socket.on('game-select-player', (data) {
       setState(() {
-        BackendGameSelectPlayerJSON winnerData = BackendGameSelectPlayerJSON.fromJson(data);
+        BackendGameSelectPlayerJSON SelectPlayerData = BackendGameSelectPlayerJSON.fromJson(data);
         //TODO: el usuario elegirá el player
         int selectedUserId = 1;
         FrontendGameSelectPlayerResponseJSON response = FrontendGameSelectPlayerResponseJSON(
@@ -106,7 +120,7 @@ class _GameScreenState extends State<GameScreen> {
 
     socket.on('game-select-card', (data) {
       setState(() {
-        BackendGameSelectCardJSON winnerData = BackendGameSelectCardJSON.fromJson(data);
+        BackendGameSelectCardJSON SelectCardData = BackendGameSelectCardJSON.fromJson(data);
         //TODO: el usuario elegirá la carta
         String selectedCard = "Attack";
         FrontendGameSelectCardResponseJSON response = FrontendGameSelectCardResponseJSON(
@@ -122,7 +136,7 @@ class _GameScreenState extends State<GameScreen> {
 
     socket.on('game-select-card-type', (data) {
       setState(() {
-        BackendGameSelectCardTypeJSON winnerData = BackendGameSelectCardTypeJSON.fromJson(data);
+        BackendGameSelectCardTypeJSON SelectCardTypeData = BackendGameSelectCardTypeJSON.fromJson(data);
         //TODO: el usuario elegirá el tipo de carta
         String selectedCard = "Attack";
         FrontendGameSelectCardTypeResponseJSON response = FrontendGameSelectCardTypeResponseJSON(

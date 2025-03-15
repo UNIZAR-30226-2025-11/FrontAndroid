@@ -17,6 +17,7 @@ class WaitingScreen extends StatefulWidget {
 class _StartGameScreenState extends State<WaitingScreen> {
   String? errorMsg; // Variable para mostrar errores
   List<String> players = []; // Lista de jugadores en el lobby
+  Map<String, dynamic>? initialGameState;
 
   @override
   void initState() {
@@ -29,6 +30,12 @@ class _StartGameScreenState extends State<WaitingScreen> {
       });
     });
 
+    widget.socket.on('game-state', (data) {
+      setState(() {
+        initialGameState = data;
+      });
+    });
+
     // Escuchar el evento 'start-game' para empezar el juego
     widget.socket.on('start-game', (data) {
       final Map<String, dynamic> responseData = data;
@@ -37,7 +44,8 @@ class _StartGameScreenState extends State<WaitingScreen> {
         // Si no hay error, navegar a la pantalla del juego
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(socket: widget.socket,lobbyId: widget.lobbyId,)),
+          MaterialPageRoute(builder: (context) => GameScreen(socket:
+          widget.socket,lobbyId: widget.lobbyId,initialGameState: initialGameState ?? {},)),
         );
       } else {
         // Si hay un error, mostrar un mensaje
