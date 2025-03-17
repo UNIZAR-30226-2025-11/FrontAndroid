@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -23,7 +24,7 @@ class GameScreen extends StatefulWidget {
   _GameScreenState createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   late IO.Socket socket;
   bool error = false;
   String errorMsg = "";
@@ -37,42 +38,53 @@ class _GameScreenState extends State<GameScreen> {
   int remainingTime = 60;
   late Timer timer;
 
+  List<Map<String, dynamic>> animatingCards = [];
+  bool isAnimating = false;
+
   @override
   void initState() {
     super.initState();
     socket = widget.socket;
     if (widget.initialGameState.isNotEmpty) {
+      print('A');
       dynamic data = widget.initialGameState;
       setState(() {
         error = data['error'];
         errorMsg = data['errorMsg'];
-        playerCards = List<String>.from(data['playerCards']);
+        print(data['playerCards']);
+        //playerCards = List<String>.from(data['playerCards']);
+        playerCards = List<String>.from(jsonDecode(data['playerCards']));
+        print(data['playerCards']);  // Para ver qué tipo de dato es
         players = (data['players'] as List)
             .map((player) => PlayerJSON.fromJson(player))
             .toList();
         turn = data['turn'];
         timeOut = data['timeOut'];
       });
+      print('fin');
     }
     setupSocketListeners();
     startTimer();
   }
 
   void setupSocketListeners() {
-    print("Listens ");
     socket.on('game-state', (data) {
-      print("game-state");
-      setState(() {
-        error = data['error'];
-        errorMsg = data['errorMsg'];
-        playerCards = List<String>.from(data['playerCards']);
-        players = (data['players'] as List)
-            .map((player) => PlayerJSON.fromJson(player))
-            .toList();
-        turn = data['turn'];
-        timeOut = data['timeOut'];
-      });
+      if (mounted) {  // Add this check
+        setState(() {
+          error = data['error'];
+          errorMsg = data['errorMsg'];
+          playerCards = List<String>.from(jsonDecode(data['playerCards']));
+          players = (data['players'] as List)
+              .map((player) => PlayerJSON.fromJson(player))
+              .toList();
+          turn = data['turn'];
+          timeOut = data['timeOut'];
+        });
+      }
     });
+
+
+    remainingTime = timeOut;
 
     void accion(BackendNotifyActionJSON action) {
       // TODO: realizar accion según campo action
@@ -154,19 +166,26 @@ class _GameScreenState extends State<GameScreen> {
 
 
   void sendGameAction(List<int> selectedCardIndices) {
-    List<String> playedCards = selectedCardIndices.map((index) => playerCards[index]).toList();
+    List<String> playedCards = selectedCardIndices.isEmpty
+        ? []  // Si la lista está vacía, asignamos una lista vacía
+        : selectedCardIndices.map((index) => playerCards[index]).toList();
+
+    // Usar jsonEncode para convertir la lista a una cadena JSON (incluso si es vacía)
+    String playedCardsJson = jsonEncode(playedCards);
 
     FrontendGamePlayedCardsJSON gamePlayedData = FrontendGamePlayedCardsJSON(
       error: false,
       errorMsg: "",
-      playedCards: playedCards.join(", "),
+      playedCards: playedCardsJson,
       lobbyId: widget.lobbyId,
     );
 
-    // Enviar el evento al servidor
     socket.emit('game-played-cards', gamePlayedData.toJson());
 
-    socket.once('game-played-cards-response', (data) {
+    print("cartas enviadas");
+
+    socket.on('game-played-cards', (data) {
+      print("respuesta a cartas recibida");
       BackendGamePlayedCardsResponseJSON response = BackendGamePlayedCardsResponseJSON
           .fromJson(data);
 
@@ -177,7 +196,8 @@ class _GameScreenState extends State<GameScreen> {
         });
       } else {
         setState(() {
-          //TODO: COMPROBAR QUE ACTUALIZA EL ESTADO
+          print("Actualizando estado");
+          //TODO: METER NUEVA CARTA SI HA ROBADO
         });
       }
     });
@@ -201,11 +221,25 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    // Remove all event listeners
     socket.off('game-state');
+    socket.off('notify-action');
+    socket.off('winner');
+    socket.off('game-select-player');
+    socket.off('game-select-card');
+    socket.off('game-select-card-type');
+    socket.off('game-played-cards');
+
+    // Cancel timers
     timer.cancel();
+
+    // Dispose animation controllers
+    for (var card in animatingCards) {
+      (card['controller'] as AnimationController).dispose();
+    }
+
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,6 +265,7 @@ class _GameScreenState extends State<GameScreen> {
               ],
             ),
           ),
+        // Only display other players, not the current player
           if (players.isNotEmpty)
             Positioned(
               top: 50,
@@ -239,13 +274,13 @@ class _GameScreenState extends State<GameScreen> {
             ),
           if (players.length >= 2)
             Positioned(
-              bottom: 460,
+              bottom: 400,
               left: 25,
               child: buildPlayerCard(players[1]),
             ),
           if (players.length >= 3)
             Positioned(
-              bottom: 460,
+              bottom: 400,
               right: 25,
               child: buildPlayerCard(players[2]),
             ),
@@ -272,7 +307,8 @@ class _GameScreenState extends State<GameScreen> {
                 ElevatedButton(
                   onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3
                       ? () {
-                    sendGameAction(selectedCards);
+                    _animatePlayedCards();
+                    //sendGameAction(selectedCards);
                   }
                       : null,
                   child: Text('Play Cards'),
@@ -306,6 +342,9 @@ class _GameScreenState extends State<GameScreen> {
                       int index = entry.key;
                       String cardName = entry.value;
                       String imagePath = 'assets/images/$cardName.jpg';
+                      bool isSelected = selectedCards.contains(index);
+                      double cardHeight = isSelected ? 170 : 150;
+                      double cardWidth = isSelected ? 115 : 100;
                       return GestureDetector(
                         onTap: () {
                           setState(() {
@@ -316,21 +355,29 @@ class _GameScreenState extends State<GameScreen> {
                             }
                           });
                         },
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: 8.0),
-                          height: 150,
-                          width: 100,
-                          decoration: BoxDecoration(
+                        child: AnimatedContainer(
+                            duration: Duration(milliseconds: 150),
+                            margin: EdgeInsets.symmetric(horizontal: 8.0),
+                            height: cardHeight,
+                            width: cardWidth,
+                            decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.asset(
-                              imagePath,
-                              fit: BoxFit.fill,
+                            boxShadow: isSelected ? [
+                              BoxShadow(
+                              color: Colors.yellow.withOpacity(0.8),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                              )
+                              ] : [],
+                        ),
+                      child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                            imagePath,
+                            fit: BoxFit.fill,
                             ),
-                          ),
+                        ),
                         ),
                       );
                     }).toList(),
@@ -339,28 +386,155 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
           ),
+        ]
+      ),
+    );
+
+  }
+
+  Widget buildPlayerCard(PlayerJSON player) {
+    // Determinar el color de fondo según si el jugador está activo
+    Color backgroundColor = player.active ? Colors.white : Colors.grey[400]!;
+
+    return Container(
+      margin: EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(16.0),
+      height: 150,
+      width: 160,
+      decoration: BoxDecoration(
+        color: backgroundColor, // Color de fondo dinámico
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          // Ícono de jugador
+          Icon(
+            Icons.person,
+            size: 40,
+            color: player.active ? Colors.blue : Colors.grey,
+          ),
+          SizedBox(width: 16),
+          // Texto con el número de cartas
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Player ${player.id}',
+                style: TextStyle(
+                  color: player.active ? Colors.black : Colors.grey[600],
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '${player.numCards} cards',
+                style: TextStyle(
+                  color: player.active ? Colors.black : Colors.grey[600],
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget buildPlayerCard(PlayerJSON player) {
-    return Container(
-      margin: EdgeInsets.all(8.0),
-      padding: EdgeInsets.all(16.0),
-      height: 150,
-      width: 100,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Center(
-        child: Text(
-          'Player ${player.id}: ${player.numCards} cards',
-          style: TextStyle(color: Colors.black, fontSize: 18),
-          textAlign: TextAlign.center,
-        ),
-      ),
+  void _animatePlayedCards() {
+    if (selectedCards.isEmpty || isAnimating) return;
+
+    setState(() {
+      isAnimating = true;
+
+      // Create a copy of the selected cards for animation
+      animatingCards = selectedCards.map((index) {
+        return {
+          'cardName': playerCards[index],
+          'controller': AnimationController(
+            duration: Duration(milliseconds: 800),
+            vsync: this,
+          ),
+          'position': Tween<Offset>(
+            begin: Offset(0, 0),
+            end: Offset(
+              (MediaQuery.of(context).size.width / 2) -
+                  (MediaQuery.of(context).size.width / 2 - 150 + index * 116),
+              (MediaQuery.of(context).size.height * 0.3) -
+                  (MediaQuery.of(context).size.height - 100),
+            ),
+          ).animate(CurvedAnimation(
+            parent: AnimationController(
+              duration: Duration(milliseconds: 800),
+              vsync: this,
+            )..forward(),
+            curve: Curves.easeOutQuad,
+          )),
+        };
+      }).toList();
+    });
+
+    // Start animation
+    Future.delayed(Duration(milliseconds: 50), () {
+      for (var card in animatingCards) {
+        (card['controller'] as AnimationController).forward();
+      }
+    });
+
+    // After animation completes, send the game action
+    Future.delayed(Duration(milliseconds: 1000), () {
+      setState(() {
+        isAnimating = false;
+        animatingCards = [];
+      });
+      sendGameAction(selectedCards);
+    });
+  }
+
+  Widget _buildPlayedCardsArea() {
+    if (!isAnimating) return Container();
+
+    return Stack(
+      children: animatingCards.map((cardData) {
+        String cardName = cardData['cardName'];
+        String imagePath = 'assets/images/$cardName.jpg';
+        AnimationController controller = cardData['controller'];
+        Animation<Offset> position = cardData['position'];
+
+        return AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: position.value,
+              child: Container(
+                height: 150,
+                width: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      }).toList(),
     );
   }
+
 }

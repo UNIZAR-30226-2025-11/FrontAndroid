@@ -25,7 +25,13 @@ class _StartGameScreenState extends State<StartGameScreen> {
     // Escuchar actualizaciones del lobby
     widget.socket.on('lobby-updated', (data) {
       setState(() {
-        players = List<String>.from(data['players']);
+        if (data['players'] is List) {
+          players = List<String>.from(data['players']);
+        } else if (data['players'] is String) {
+          players = [data['players']]; // Convertimos el string en una lista con un solo elemento
+        } else {
+          players = []; // En caso de datos inesperados, se inicializa vacío
+        }
       });
     });
 
@@ -53,9 +59,11 @@ class _StartGameScreenState extends State<StartGameScreen> {
         // Enviar start-game si el servidor respondió correctamente
         print("lobby started");
       } else {
-        setState(() {
-          errorMsg = data['errorMsg'];
-        });
+        if (mounted) {
+          setState(() {
+            errorMsg = data['errorMsg'];
+          });
+        }
       }
     });
 

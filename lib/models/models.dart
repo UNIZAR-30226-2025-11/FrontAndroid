@@ -134,21 +134,13 @@ class BackendGamePlayedCardsResponseJSON {
   final bool error;
   final String errorMsg;
   final String cardsSeeFuture;
-  final bool hasShuffled;
-  final bool skipTurn;
-  final bool hasWonAttack;
-  final bool hasStolenRandomCard;
-  final bool hasStolenCardByType;
+  final String cardsReceived;
 
   BackendGamePlayedCardsResponseJSON({
     required this.error,
     required this.errorMsg,
     required this.cardsSeeFuture,
-    required this.hasShuffled,
-    required this.skipTurn,
-    required this.hasWonAttack,
-    required this.hasStolenRandomCard,
-    required this.hasStolenCardByType,
+    required this.cardsReceived
   });
 
   factory BackendGamePlayedCardsResponseJSON.fromJson(Map<String, dynamic> json) {
@@ -156,11 +148,7 @@ class BackendGamePlayedCardsResponseJSON {
       error: json['error'],
       errorMsg: json['errorMsg'],
       cardsSeeFuture: json['cardsSeeFuture'],
-      hasShuffled: json['hasShuffled'],
-      skipTurn: json['skipTurn'],
-      hasWonAttack: json['hasWonAttack'],
-      hasStolenRandomCard: json['hasStolenRandomCard'],
-      hasStolenCardByType: json['hasStolenCardByType'],
+      cardsReceived: json['cardsReceived'],
     );
   }
 
@@ -169,11 +157,7 @@ class BackendGamePlayedCardsResponseJSON {
       'error': error,
       'errorMsg': errorMsg,
       'cardsSeeFuture': cardsSeeFuture,
-      'hasShuffled': hasShuffled,
-      'skipTurn': skipTurn,
-      'hasWonAttack': hasWonAttack,
-      'hasStolenRandomCard': hasStolenRandomCard,
-      'hasStolenCardByType': hasStolenCardByType,
+      'cardsReceived': cardsReceived,
     };
   }
 }
