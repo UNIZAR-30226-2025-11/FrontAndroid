@@ -70,7 +70,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(height: 40),
+          SizedBox(height: 200),
 
           // 🏷️ Muestra el lobby ID en la parte superior
           Text(
@@ -78,7 +78,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
             style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
           ),
 
-          SizedBox(height: 20),
+          SizedBox(height: 80),
 
           // 📋 Lista de jugadores en el lobby
           Text(

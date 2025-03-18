@@ -173,6 +173,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
     // Usar jsonEncode para convertir la lista a una cadena JSON (incluso si es vacía)
     String playedCardsJson = jsonEncode(playedCards);
 
+    print('enviando cartas');
+    print(playedCardsJson);
+
     FrontendGamePlayedCardsJSON gamePlayedData = FrontendGamePlayedCardsJSON(
       error: false,
       errorMsg: "",
@@ -193,11 +196,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         setState(() {
           error = true;
           errorMsg = response.errorMsg;
+          print(errorMsg);
         });
       } else {
         setState(() {
           print("Actualizando estado");
           //TODO: METER NUEVA CARTA SI HA ROBADO
+          if (response.cardsReceived != ""){
+            playedCards.add(response.cardsReceived);
+          }
         });
       }
     });
