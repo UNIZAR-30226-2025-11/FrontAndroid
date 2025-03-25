@@ -250,10 +250,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      /*appBar: AppBar(
         title: Text('Game Info'),
         automaticallyImplyLeading: false,
-      ),
+      ),*/
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [

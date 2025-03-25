@@ -4,7 +4,7 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Shop')),
+      //appBar: AppBar(title: Text('Shop')),
       backgroundColor: Color(0xFF9D0514),
       body: Padding(
         padding: const EdgeInsets.all(8.0),

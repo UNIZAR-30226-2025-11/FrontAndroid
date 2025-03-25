@@ -38,7 +38,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Statistics')),
+      //appBar: AppBar(title: Text('Statistics')),
       backgroundColor: Color(0xFF9D0514),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

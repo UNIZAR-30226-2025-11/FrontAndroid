@@ -201,10 +201,10 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      /*appBar: AppBar(
         title: Text("Main Screen"),
         automaticallyImplyLeading: false, // Remueve el botón de regreso
-      ),
+      ),*/
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [

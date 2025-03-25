@@ -62,12 +62,18 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Welcome')),
+      //appBar: AppBar(title: Text('Welcome')),
       backgroundColor: Color(0xFF9D0514),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Image.asset(
+              'assets/images/logo.jpg',
+              height: 300,
+              width: 450,
+              fit: BoxFit.contain,
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -77,7 +83,7 @@ class HomeScreen extends StatelessWidget {
               },
               child: Text('Sign Up'),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -87,8 +93,8 @@ class HomeScreen extends StatelessWidget {
               },
               child: Text('Log In'),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
+            SizedBox(height: 50),
+            /*ElevatedButton(
                 onPressed: () {
                   Navigator.push(
                       context,
@@ -96,9 +102,9 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
                 child: Text('TESTS')
-            ),
+            ),*/
 
-            ElevatedButton(
+            /*ElevatedButton(
               onPressed: () {
                 if (socket.connected) {
                   final lobbyRequest = {
@@ -128,7 +134,7 @@ class HomeScreen extends StatelessWidget {
                 }
               },
               child: Text('Enviar Evento'),
-            ),
+            ),*/
 
 
           ],
