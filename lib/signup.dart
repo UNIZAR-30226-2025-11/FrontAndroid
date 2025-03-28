@@ -6,9 +6,8 @@ import 'login.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SignUpScreen extends StatefulWidget {
-  final IO.Socket socket;
 
-  SignUpScreen({required this.socket});
+  SignUpScreen();
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
 }
@@ -22,7 +21,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
-    socket = widget.socket; // Asigna el socket correctamente
   }
 
   @override
@@ -83,7 +81,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MainScreen(socket: socket)), // Placeholder
+      MaterialPageRoute(builder: (context) => MainScreen(username: usernameController.text,)), // Placeholder
     );
   }
 
@@ -138,7 +136,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginScreen(socket: socket,)),
+                        MaterialPageRoute(builder: (context) => LoginScreen()),
                       );
                     },
                     child: Text(

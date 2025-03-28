@@ -6,8 +6,9 @@ import 'package:flutter_example/game.dart'; // Importa la pantalla de juego
 class StartGameScreen extends StatefulWidget {
   final IO.Socket socket;
   final String lobbyId; // Se necesita el ID del lobby
+  final String username;
 
-  StartGameScreen({required this.socket, required this.lobbyId});
+  StartGameScreen({required this.socket, required this.lobbyId,required this.username});
 
   @override
   _StartGameScreenState createState() => _StartGameScreenState();
@@ -17,11 +18,11 @@ class _StartGameScreenState extends State<StartGameScreen> {
   String? errorMsg; // Variable para mostrar errores
   List<String> players = []; // Lista de jugadores en el lobby
   Map<String, dynamic>? initialGameState;
-
+  late String username;
   @override
   void initState() {
     super.initState();
-
+    username = widget.username;
     // Escuchar actualizaciones del lobby
     widget.socket.on('lobby-updated', (data) {
       setState(() {
@@ -88,7 +89,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => GameScreen(socket:
-          widget.socket,lobbyId: widget.lobbyId,initialGameState: initialGameState ?? {},)),
+          widget.socket,lobbyId: widget.lobbyId,initialGameState: initialGameState ?? {},username: username,)),
         );
       } else {
         setState(() {

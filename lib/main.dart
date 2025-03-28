@@ -21,25 +21,7 @@ class MyApp extends StatelessWidget {
 
 
   MyApp() {
-    socket.connect();
-    final lobbyRequest = {
-      'error': false,
-      'errorMsg': '',
-      'maxPlayers': 3,
-    };
-    socket.on('connect', (_) =>
-      socket.emit("create-lobby", [lobbyRequest]));
-    //socket.on('connect', (_) => print('Conectado al servidor Socket.IO'));
-
-    print('Antes de emit');
-    print('Enviando evento create-lobby...');
-    socket.emit("create-lobby", [lobbyRequest]);
-
-    // Esperar la respuesta (ACK) del servidor
-    socket.once("create-lobby", (response) {
-      print("ACK recibido del servidor: $response");
-    });
-    socket.on('disconnect', (_) => print('Desconectado del servidor'));
+    //socket.connect();
   }
 
   @override
@@ -78,7 +60,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SignUpScreen(socket: socket)),
+                  MaterialPageRoute(builder: (context) => SignUpScreen()),
                 );
               },
               child: Text('Sign Up'),
@@ -88,7 +70,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket)),
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
                 );
               },
               child: Text('Log In'),

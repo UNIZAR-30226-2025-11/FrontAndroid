@@ -8,9 +8,8 @@ import 'homePage.dart';
 
 
 class LoginScreen extends StatefulWidget {
-  final IO.Socket socket;
 
-  LoginScreen({required this.socket});
+  LoginScreen();
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -24,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    socket = widget.socket; // Asigna el socket correctamente
   }
 
   void _showSnackBar(String message) {
@@ -77,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MainScreen(socket:socket)), // Placeholder
+      MaterialPageRoute(builder: (context) => MainScreen(username: usernameController.text,)), // Placeholder
     );
   }
 
@@ -130,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SignUpScreen(socket: socket,)),
+                        MaterialPageRoute(builder: (context) => SignUpScreen()),
                       );
                     },
                     child: Text(

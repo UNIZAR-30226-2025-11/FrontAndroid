@@ -11,21 +11,34 @@ import 'shop.dart';
 import 'joinGame.dart';
 
 class MainScreen extends StatefulWidget {
-  final IO.Socket socket;
-
-  MainScreen({required this.socket});
+  //final IO.Socket socket;
+  final String username;
+  final IO.Socket socket = IO.io('http://10.0.2.2:8000',
+      IO.OptionBuilder()
+          .setTransports(['websocket'])
+          .enableForceNew()
+          .disableAutoConnect()
+          .build()
+  );
+  MainScreen({required this.username}){
+    socket.connect();
+  }
 
   @override
   _MainScreenState createState() => _MainScreenState();
+
 }
 
 class _MainScreenState extends State<MainScreen> {
   late IO.Socket socket;
+  late String username;
 
   @override
   void initState() {
     super.initState();
-    socket = widget.socket; // Asigna el socket correctamente
+    username = widget.username;
+    //socket.connect();
+    //socket = widget.socket; // Asigna el socket correctamente
   }
 
   // Método para crear una sala de lobby
@@ -51,6 +64,7 @@ class _MainScreenState extends State<MainScreen> {
             builder: (context) => StartGameScreen(
               socket: socket,
               lobbyId: lobbyId,
+              username: username,
             ),
           ),
         );
@@ -127,7 +141,7 @@ class _MainScreenState extends State<MainScreen> {
                 scaffoldMessenger.hideCurrentSnackBar();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen(socket: socket,)), // Redirige al login
+                  MaterialPageRoute(builder: (context) => LoginScreen()), // Redirige al login
                 );
               },
               child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -170,7 +184,7 @@ class _MainScreenState extends State<MainScreen> {
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => StatisticsScreen()),
+                    MaterialPageRoute(builder: (context) => StatisticsScreen(username: username,)),
                   );
                 },
               ),
@@ -181,7 +195,7 @@ class _MainScreenState extends State<MainScreen> {
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => EditProfileScreen()),
+                    MaterialPageRoute(builder: (context) => EditProfileScreen(username: username,)),
                   );
                 },
               ),
@@ -241,7 +255,7 @@ class _MainScreenState extends State<MainScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => JoinGameScreen(socket: socket)),
+                      MaterialPageRoute(builder: (context) => JoinGameScreen(socket: socket, username: username,)),
                     );
                   },
                   child: Text("Join Lobby"),
@@ -251,7 +265,7 @@ class _MainScreenState extends State<MainScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ShopScreen()),
+                      MaterialPageRoute(builder: (context) => ShopScreen(username: username,)),
                     );
                   },
                   child: Text("Shop"),

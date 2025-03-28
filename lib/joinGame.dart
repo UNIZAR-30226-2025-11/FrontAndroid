@@ -6,8 +6,9 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class JoinGameScreen extends StatefulWidget {
   final IO.Socket socket;
+  final String username;
 
-  JoinGameScreen({required this.socket});
+  JoinGameScreen({required this.socket, required this.username});
 
   @override
   _JoinGameState createState() => _JoinGameState();
@@ -37,7 +38,7 @@ class _JoinGameState extends State<JoinGameScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => WaitingScreen(socket: widget.socket, lobbyId: lobbyId),
+            builder: (context) => WaitingScreen(socket: widget.socket, lobbyId: lobbyId,username: widget.username,)
           ),
         );
       } else {

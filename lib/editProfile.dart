@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
+  final String username;
+  EditProfileScreen({required this.username});
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 

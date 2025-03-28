@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ShopScreen extends StatelessWidget {
+  final String username;
+  ShopScreen({required this.username});
   @override
   Widget build(BuildContext context) {
     return Scaffold(

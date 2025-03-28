@@ -4,6 +4,8 @@ import 'dart:async';
 
 class StatisticsScreen extends StatefulWidget {
   @override
+  final String username;
+  StatisticsScreen({required this.username});
   _StatisticsScreenState createState() => _StatisticsScreenState();
 }
 
@@ -12,11 +14,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   int gamesLost = 0;
   int totalGames = 0;
   List<Map<String, String>> lastFiveGames = [];
+  late String username;
 
   @override
   void initState() {
     super.initState();
     fetchStatistics();
+    username = widget.username;
   }
 
   Future<void> fetchStatistics() async {

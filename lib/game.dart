@@ -14,11 +14,11 @@ import 'models/models.dart';
 class GameScreen extends StatefulWidget {
   final IO.Socket socket;
   final String lobbyId;
-  final String username="user";
+  final String username;
   final int coins=3;
   final Map<String, dynamic> initialGameState;
 
-  GameScreen({required this.socket, required this.lobbyId, required this.initialGameState});
+  GameScreen({required this.socket, required this.lobbyId, required this.initialGameState, required this.username});
 
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -37,6 +37,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   List<int> selectedCards = [];
   int remainingTime = 60;
   late Timer timer;
+  late String username;
 
   List<Map<String, dynamic>> animatingCards = [];
   bool isAnimating = false;
@@ -45,6 +46,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   void initState() {
     super.initState();
     socket = widget.socket;
+    username = widget.username;
     if (widget.initialGameState.isNotEmpty) {
       print('A');
       dynamic data = widget.initialGameState;
