@@ -11,33 +11,24 @@ void main() {
 
 class MyApp extends StatelessWidget {
 
-  final IO.Socket socket = IO.io('http://10.0.2.2:8000',
-  IO.OptionBuilder()
-    .setTransports(['websocket'])
-    .enableForceNew()
-    .disableAutoConnect()
-    .build()
-  );
 
 
   MyApp() {
-    //socket.connect();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(socket: socket),
+      home: HomeScreen(),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
 
-  final IO.Socket socket;
 
-  HomeScreen({required this.socket}); // Recibimos el socket
+  HomeScreen(); // Recibimos el socket
 
 
 
@@ -76,47 +67,6 @@ class HomeScreen extends StatelessWidget {
               child: Text('Log In'),
             ),
             SizedBox(height: 50),
-            /*ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MainScreen(socket: socket))
-                  );
-                },
-                child: Text('TESTS')
-            ),*/
-
-            /*ElevatedButton(
-              onPressed: () {
-                if (socket.connected) {
-                  final lobbyRequest = {
-                    'error': false,
-                    'errorMsg': '',
-                    'maxPlayers': 3,
-                  };
-                  print('Antes de emit');
-                  socket.emit("create-lobby", [lobbyRequest]);
-                  print('dsp');
-                  // Esperar la respuesta (ACK) del servidor
-                  socket.once("create-lobby", (response) {
-                    print("ACK recibido del servidor: $response");
-                  });
-                } else {
-                  print('El socket no está conectado, intentando reconectar...');
-                  socket.connect();
-                  socket.on('connect', (_) {
-                    print('Conectado al servidor, enviando evento...');
-                    final lobbyRequest = {
-                      'error': false,
-                      'errorMsg': '',
-                      'maxPlayers': 3,
-                    };
-                    socket.emit("create-lobby", [lobbyRequest]);
-                  });
-                }
-              },
-              child: Text('Enviar Evento'),
-            ),*/
 
 
           ],
