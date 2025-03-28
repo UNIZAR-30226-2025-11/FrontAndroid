@@ -260,17 +260,26 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       body: Stack(
         children: [
           Positioned(
-            top: 10,
-            right: 10,
+            top: 48,
+            right: 30,
             child: Row(
               children: [
-                Icon(Icons.person, color: Colors.white, size: 30),
-                SizedBox(width: 8),
-                Text(widget.username, style: TextStyle(color: Colors.white, fontSize: 18)),
                 SizedBox(width: 8),
                 Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                SizedBox(width: 4),
-                Text('${widget.coins} coins', style: TextStyle(color: Colors.white, fontSize: 18)),
+                SizedBox(width: 8),
+                Text('5 coins', style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 30,
+            child: Row(
+              children: [
+                SizedBox(width: 8),
+                Icon(Icons.person, size: 30, color: Colors.white), // Botón de perfil),
+                SizedBox(width: 8),
+                Text(username, style: TextStyle(color: Colors.white, fontSize: 18)),
               ],
             ),
           ),
