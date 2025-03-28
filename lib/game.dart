@@ -63,7 +63,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         print(data['playerCards']);  // Para ver qué tipo de dato es
         players = (data['players'] as List)
             .map((player) => PlayerJSON.fromJson(player))
-            .where((player) => player.id != myId) //FIXME cambiar id por username?
+            .where((player) => player.playerUsername != username) //FIXME cambiar id por username?
             .toList();
         turn = data['turn'];
         timeOut = data['timeOut'];
@@ -86,7 +86,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
           playerCards = List<CardJSON>.from(jsonDecode(data['playerCards']));
           players = (data['players'] as List)
               .map((player) => PlayerJSON.fromJson(player))
-              .where((player) => player.id != myId) //FIXME
+              .where((player) => player.playerUsername != username)
               .toList();
           turn = data['turn'];
           timeOut = data['timeOut'];
@@ -168,50 +168,220 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
     socket.on('game-select-player', (data) {
       setState(() {
-        BackendGameSelectPlayerJSON SelectPlayerData = BackendGameSelectPlayerJSON.fromJson(data);
-        int timeLeft = SelectPlayerData.timeOut;
-        //TODO: el usuario elegirá el player
-        String selectedUserId = players[0].id.toString(); //FIXME: playerJSON no tiene username???
-        FrontendGameSelectPlayerResponseJSON response = FrontendGameSelectPlayerResponseJSON(
-          error: false,
-          errorMsg: "",
-          playerUsername: selectedUserId,
-          lobbyId: widget.lobbyId,
+        BackendGameSelectPlayerJSON selectPlayerData = BackendGameSelectPlayerJSON.fromJson(data);
+        int timeLeft = selectPlayerData.timeOut;
+
+        // Show dialog to select a player
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Prevent dismissing by tapping outside
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Select a Player'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Time left: $timeLeft seconds'),
+                  SizedBox(height: 10),
+                  // Create a list of players to select from
+                  Column(
+                    children: players.map((player) {
+                      return ListTile(
+                        title: Text(player.playerUsername),
+                        onTap: () {
+                          // Send selected player back to the server
+                          FrontendGameSelectPlayerResponseJSON response = FrontendGameSelectPlayerResponseJSON(
+                            error: false,
+                            errorMsg: "",
+                            playerUsername: player.playerUsername,
+                            lobbyId: widget.lobbyId,
+                          );
+                          socket.emit('game-select-player', response.toJson());
+
+                          // Close the dialog
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            );
+          },
         );
-        socket.emit('game-select-player', response.toJson());
       });
     });
 
+
     socket.on('game-select-card', (data) {
       setState(() {
-        BackendGameSelectCardJSON SelectCardData = BackendGameSelectCardJSON.fromJson(data);
-        //TODO: el usuario elegirá la carta
-        CardJSON selectedCard = CardJSON(id: 0, type: "Attack"); //FIXME
-        FrontendGameSelectCardResponseJSON response = FrontendGameSelectCardResponseJSON(
-          error: false,
-          errorMsg: "",
-          card: selectedCard,
-          lobbyId: widget.lobbyId,
+        BackendGameSelectCardJSON selectCardData = BackendGameSelectCardJSON.fromJson(data);
+        int timeLeft = selectCardData.timeOut;
+
+        // Show dialog to select a card
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Prevent dismissing by tapping outside
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Select a Card'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Time left: $timeLeft seconds'),
+                  SizedBox(height: 10),
+                  // Create a grid of cards to select from
+                  GridView.builder(
+                    shrinkWrap: true,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: playerCards.length,
+                    itemBuilder: (context, index) {
+                      CardJSON card = playerCards[index];
+                      String imagePath = 'assets/images/${card.type}.jpg';
+
+                      return GestureDetector(
+                        onTap: () {
+                          // Send selected card back to the server
+                          FrontendGameSelectCardResponseJSON response = FrontendGameSelectCardResponseJSON(
+                            error: false,
+                            errorMsg: "",
+                            card: card,
+                            lobbyId: widget.lobbyId,
+                          );
+                          socket.emit('game-select-card', response.toJson());
+
+                          // Close the dialog
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey),
+                          ),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                                  child: Image.asset(
+                                    imagePath,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  card.type,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         );
-        socket.emit('game-select-card', response.toJson());
       });
     });
+
 
 
     socket.on('game-select-card-type', (data) {
       setState(() {
-        BackendGameSelectCardTypeJSON SelectCardTypeData = BackendGameSelectCardTypeJSON.fromJson(data);
-        //TODO: el usuario elegirá el tipo de carta
-        String selectedCard = "Attack";
-        FrontendGameSelectCardTypeResponseJSON response = FrontendGameSelectCardTypeResponseJSON(
-          error: false,
-          errorMsg: "",
-          cardType: selectedCard,
-          lobbyId: widget.lobbyId,
+        BackendGameSelectCardTypeJSON selectCardTypeData = BackendGameSelectCardTypeJSON.fromJson(data);
+        int timeLeft = selectCardTypeData.timeOut;
+
+        // Show dialog to select a card type
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Prevent dismissing by tapping outside
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Select a Card Type'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Time left: $timeLeft seconds'),
+                  SizedBox(height: 10),
+                  // Create a grid of card types to select from
+                  GridView.builder(
+                    shrinkWrap: true,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 1.0,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: CardType.values.length,
+                    itemBuilder: (context, index) {
+                      CardType cardType = CardType.values[index];
+                      String imagePath = 'assets/images/${cardType.toString().split('.').last}.jpg';
+
+                      return GestureDetector(
+                        onTap: () {
+                          // Send selected card type back to the server
+                          FrontendGameSelectCardTypeResponseJSON response = FrontendGameSelectCardTypeResponseJSON(
+                            error: false,
+                            errorMsg: "",
+                            cardType: cardType.toString().split('.').last, // Send just the type name
+                            lobbyId: widget.lobbyId,
+                          );
+                          socket.emit('game-select-card-type', response.toJson());
+
+                          // Close the dialog
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey),
+                            color: Colors.white,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                imagePath,
+                                height: 80,
+                                width: 80,
+                                fit: BoxFit.contain,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                cardType.toString().split('.').last, // Display type name
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         );
-        socket.emit('game-select-card-type', response.toJson());
       });
     });
+
 
 
   }
@@ -326,9 +496,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
             child: Row(
               children: [
                 SizedBox(width: 8),
-                Icon(Icons.person, size: 30, color: Colors.white), // Botón de perfil),
+                Icon(Icons.person, size: 30, color: Colors.white),
                 SizedBox(width: 8),
-                Text(username, style: TextStyle(color: Colors.white, fontSize: 18)),
+                Text(
+                    username,
+                    style: TextStyle(
+                        color: turnUsername == username ? Colors.yellow : Colors.white,
+                        fontSize: 18,
+                        fontWeight: turnUsername == username ? FontWeight.bold : FontWeight.normal
+                    )
+                ),
               ],
             ),
           ),
@@ -337,24 +514,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
             Positioned(
               top: 50,
               left: MediaQuery.of(context).size.width / 2 - 60,
-              child: buildPlayerCard(players[0]),
+              child: buildPlayerCard(players[0],isCurrentTurn: players[0].playerUsername == turnUsername),
             ),
           if (players.length >= 2)
             Positioned(
               bottom: 400,
               left: 25,
-              child: buildPlayerCard(players[1]),
+              child: buildPlayerCard(players[1],isCurrentTurn: players[0].playerUsername == turnUsername),
             ),
           if (players.length >= 3)
             Positioned(
               bottom: 400,
               right: 25,
-              child: buildPlayerCard(players[2]),
+              child: buildPlayerCard(players[2],isCurrentTurn: players[0].playerUsername == turnUsername),
             ),
           Positioned(
             bottom: 220,
             left: MediaQuery.of(context).size.width / 2 - 15,
-            child: SizedBox(
+            /*child: SizedBox(
               width: 25,
               height: 25,
               child: CircularProgressIndicator(
@@ -363,7 +540,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                 strokeWidth: 25,
               ),
-            ),
+            ),*/
+            child: _buildTimerIndicator(),
           ),
           Positioned(
             bottom: 210,
@@ -459,9 +637,42 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
   }
 
-  Widget buildPlayerCard(PlayerJSON player) {
-    // Determinar el color de fondo según si el jugador está activo
-    Color backgroundColor = player.active ? Colors.white : Colors.grey[400]!;
+  Widget _buildTimerIndicator() {
+    return TweenAnimationBuilder(
+      duration: Duration(seconds: timeOut),
+      tween: Tween<double>(begin: 1.0, end: 0.0),
+      builder: (context, value, child) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            CircularProgressIndicator(
+              value: value,
+              backgroundColor: Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                  value > 0.3
+                      ? Colors.green
+                      : (value > 0.1 ? Colors.orange : Colors.red)
+              ),
+              strokeWidth: 10,
+            ),
+            Text(
+              '$remainingTime',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: remainingTime <= 10 ? Colors.red : Colors.black,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget buildPlayerCard(PlayerJSON player, {bool isCurrentTurn = false}) {
+    Color backgroundColor = isCurrentTurn
+        ? Colors.yellowAccent.withOpacity(0.3)  // Highlight for current turn
+        : (player.active ? Colors.white : Colors.grey[400]!);
 
     return Container(
       margin: EdgeInsets.all(8.0),
@@ -469,8 +680,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       height: 150,
       width: 160,
       decoration: BoxDecoration(
-        color: backgroundColor, // Color de fondo dinámico
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(10),
+        border: isCurrentTurn
+            ? Border.all(color: Colors.yellow, width: 3)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -482,31 +696,45 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Ícono de jugador
-          Icon(
-            Icons.person,
-            size: 40,
-            color: player.active ? Colors.blue : Colors.grey,
+          // Player icon with turn indicator
+          Stack(
+            children: [
+              Icon(
+                Icons.person,
+                size: 40,
+                color: player.active ? Colors.blue : Colors.grey,
+              ),
+              if (isCurrentTurn)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Icon(
+                    Icons.star,
+                    color: Colors.yellow,
+                    size: 20,
+                  ),
+                ),
+            ],
           ),
           SizedBox(width: 16),
-          // Texto con el número de cartas
+          // Player info
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Player ${player.id}', //FIXME change to username
+                player.playerUsername,
                 style: TextStyle(
-                  color: player.active ? Colors.black : Colors.grey[600],
+                  color: isCurrentTurn ? Colors.black : (player.active ? Colors.black : Colors.grey[600]),
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: isCurrentTurn ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
               SizedBox(height: 4),
               Text(
                 '${player.numCards} cards',
                 style: TextStyle(
-                  color: player.active ? Colors.black : Colors.grey[600],
+                  color: isCurrentTurn ? Colors.black : (player.active ? Colors.black : Colors.grey[600]),
                   fontSize: 16,
                 ),
               ),

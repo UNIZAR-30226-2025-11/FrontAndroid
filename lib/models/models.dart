@@ -4,16 +4,31 @@ import 'package:flutter/material.dart';
 
 // lib/models.dart
 
+enum CardType {
+  Bomb,
+  SeeFuture,
+  Shuffle,
+  Skip,
+  Attack,
+  Favor,
+  Deactivate,
+  RainbowCat,
+  TacoCat,
+  HairyPotatoCat,
+  Cattermelon,
+  BeardCat
+}
+
 class PlayerJSON {
-  final int id;
+  final String playerUsername;
   final int numCards;
   final bool active;
 
-  PlayerJSON({required this.id, required this.numCards, required this.active});
+  PlayerJSON({required this.playerUsername, required this.numCards, required this.active});
 
   factory PlayerJSON.fromJson(Map<String, dynamic> json) {
     return PlayerJSON(
-      id: json['id'],
+      playerUsername: json['playerUsername'],
       numCards: json['numCards'],
       active: json['active'],
     );
@@ -21,7 +36,7 @@ class PlayerJSON {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'playerUsername': playerUsername,
       'numCards': numCards,
       'active': active,
     };
