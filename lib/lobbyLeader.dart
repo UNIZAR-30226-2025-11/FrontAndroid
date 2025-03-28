@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_example/game.dart'; // Importa la pantalla de juego
+import 'package:flutter_example/game.dart';
+
+import 'models/models.dart'; // Importa la pantalla de juego
 
 class StartGameScreen extends StatefulWidget {
   final IO.Socket socket;
@@ -16,7 +18,7 @@ class StartGameScreen extends StatefulWidget {
 
 class _StartGameScreenState extends State<StartGameScreen> {
   String? errorMsg; // Variable para mostrar errores
-  List<String> players = []; // Lista de jugadores en el lobby
+  List<PlayerLobbyJSON> players = []; // Lista de jugadores en el lobby
   Map<String, dynamic>? initialGameState;
   late String username;
   @override
@@ -24,16 +26,30 @@ class _StartGameScreenState extends State<StartGameScreen> {
     super.initState();
     username = widget.username;
     // Escuchar actualizaciones del lobby
-    widget.socket.on('lobby-updated', (data) {
-      setState(() {
-        if (data['players'] is List) {
-          players = List<String>.from(data['players']);
-        } else if (data['players'] is String) {
-          players = [data['players']]; // Convertimos el string en una lista con un solo elemento
-        } else {
-          players = []; // En caso de datos inesperados, se inicializa vacío
+    widget.socket.on('update-lobby', (data) {
+      try {
+        final lobbyUpdate = BackendLobbyStateUpdateJSON.fromJson(data);
+        if (lobbyUpdate.error) {
+          print('Lobby update error: ${lobbyUpdate.errorMsg}');
+          return;
         }
-      });
+
+        if (lobbyUpdate.disband) {
+          print('Disband');
+          return;
+        }
+
+        setState(() {
+          //players = lobbyUpdate.players
+          players = (lobbyUpdate.players as List)
+              .map((player) => PlayerLobbyJSON.fromJson(player))
+              .where((player) => player.name != username) //FIXME mostrarme como miembro del lobby?
+              .toList();
+        });
+      } catch (e) {
+        // Handle JSON parsing errors
+        print('Error parsing lobby update: $e');
+      }
     });
 
   }
@@ -134,7 +150,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
               itemBuilder: (context, index) {
                 return ListTile(
                   title: Text(
-                    players[index],
+                    players[index].name,
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                   leading: Icon(Icons.person, color: Colors.white),

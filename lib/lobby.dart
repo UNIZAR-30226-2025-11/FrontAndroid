@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_example/game.dart'; // Importa la pantalla de juego
+import 'package:flutter_example/game.dart';
+
+import 'models/models.dart'; // Importa la pantalla de juego
 
 class WaitingScreen extends StatefulWidget {
   final IO.Socket socket;
@@ -17,7 +19,7 @@ class WaitingScreen extends StatefulWidget {
 
 class _StartGameScreenState extends State<WaitingScreen> {
   String? errorMsg; // Variable para mostrar errores
-  List<String> players = []; // Lista de jugadores en el lobby
+  List<PlayerLobbyJSON> players = []; // Lista de jugadores en el lobby
   Map<String, dynamic>? initialGameState;
 
   late String username;
@@ -28,9 +30,29 @@ class _StartGameScreenState extends State<WaitingScreen> {
     username = widget.username;
     // Escuchar actualizaciones del lobby
     widget.socket.on('update-lobby', (data) {
-      setState(() {
-        players = List<String>.from(data['players']);
-      });
+      try {
+        final lobbyUpdate = BackendLobbyStateUpdateJSON.fromJson(data);
+        if (lobbyUpdate.error) {
+          print('Lobby update error: ${lobbyUpdate.errorMsg}');
+          return;
+        }
+
+        if (lobbyUpdate.disband) {
+          print('Disband');
+          return;
+        }
+
+        setState(() {
+          //players = lobbyUpdate.players
+          players = (lobbyUpdate.players as List)
+              .map((player) => PlayerLobbyJSON.fromJson(player))
+              .where((player) => player.name != username) //FIXME mostrarme como miembro del lobby?
+              .toList();
+        });
+      } catch (e) {
+        // Handle JSON parsing errors
+        print('Error parsing lobby update: $e');
+      }
     });
 
     widget.socket.on('game-state', (data) {
@@ -97,7 +119,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
               itemBuilder: (context, index) {
                 return ListTile(
                   title: Text(
-                    players[index],
+                    players[index].name,
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                   leading: Icon(Icons.person, color: Colors.white),

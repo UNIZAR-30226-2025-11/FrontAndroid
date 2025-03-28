@@ -28,10 +28,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   late IO.Socket socket;
   bool error = false;
   String errorMsg = "";
-  List<String> playerCards = [];
+  List<CardJSON> playerCards = [];
   List<PlayerJSON> players = [];
   int turn = 0;
   int timeOut = 0;
+  String turnUsername="";
+  int cardsLeftInDeck=0;
 
   final ScrollController _scrollController = ScrollController();
   List<int> selectedCards = [];
@@ -41,6 +43,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
   List<Map<String, dynamic>> animatingCards = [];
   bool isAnimating = false;
+
+  final myId =1;
 
   @override
   void initState() {
@@ -55,13 +59,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         errorMsg = data['errorMsg'];
         print(data['playerCards']);
         //playerCards = List<String>.from(data['playerCards']);
-        playerCards = List<String>.from(jsonDecode(data['playerCards']));
+        playerCards = List<CardJSON>.from(jsonDecode(data['playerCards']));
         print(data['playerCards']);  // Para ver qué tipo de dato es
         players = (data['players'] as List)
             .map((player) => PlayerJSON.fromJson(player))
+            .where((player) => player.id != myId) //FIXME cambiar id por username?
             .toList();
         turn = data['turn'];
         timeOut = data['timeOut'];
+        remainingTime = timeOut;
+        turnUsername = data['turnUsername'];
+        cardsLeftInDeck  = data ['cardsLeftInDeck'];
       });
       print('fin');
     }
@@ -75,12 +83,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         setState(() {
           error = data['error'];
           errorMsg = data['errorMsg'];
-          playerCards = List<String>.from(jsonDecode(data['playerCards']));
+          playerCards = List<CardJSON>.from(jsonDecode(data['playerCards']));
           players = (data['players'] as List)
               .map((player) => PlayerJSON.fromJson(player))
+              .where((player) => player.id != myId) //FIXME
               .toList();
           turn = data['turn'];
           timeOut = data['timeOut'];
+          remainingTime = timeOut;
+          turnUsername = data['turnUsername'];
+          cardsLeftInDeck  = data ['cardsLeftInDeck'];
         });
       }
     });
@@ -88,14 +100,19 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
     remainingTime = timeOut;
 
-    void accion(BackendNotifyActionJSON action) {
+    void accion(dynamic action) {
+      PlayerJSON target = action['targetUser'];
+      PlayerJSON trigger = action['triggerUser'];
+      String act = action['action'];
+      switch(act){
       // TODO: realizar accion según campo action
+      }
     }
 
     socket.on('notify-action', (data) {
       setState(() {
-        BackendNotifyActionJSON action = BackendNotifyActionJSON.fromJson(data);
-        accion(action);
+        //BackendNotifyActionJSON action = BackendNotifyActionJSON.fromJson(data);
+        accion(data);
       });
     });
 
@@ -104,8 +121,40 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       if (winnerData.error) {
         print('Error: ${winnerData.errorMsg}');
       } else {
-        print('Jugador ${winnerData.userId} ha ganado y ha ganado ${winnerData
+        print('Jugador ${winnerData.winnerUsername} ha ganado y ha ganado ${winnerData
             .coinsEarned} coins');
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('¡We have a winner!'),
+              content: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${winnerData.winnerUsername} ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: 'has won '),
+                    TextSpan(
+                      text: '${winnerData.coinsEarned} coins',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Cerrar'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+
       }
     }
 
@@ -120,12 +169,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
     socket.on('game-select-player', (data) {
       setState(() {
         BackendGameSelectPlayerJSON SelectPlayerData = BackendGameSelectPlayerJSON.fromJson(data);
+        int timeLeft = SelectPlayerData.timeOut;
         //TODO: el usuario elegirá el player
-        int selectedUserId = 1;
+        String selectedUserId = players[0].id.toString(); //FIXME: playerJSON no tiene username???
         FrontendGameSelectPlayerResponseJSON response = FrontendGameSelectPlayerResponseJSON(
           error: false,
           errorMsg: "",
-          userId: selectedUserId,
+          playerUsername: selectedUserId,
           lobbyId: widget.lobbyId,
         );
         socket.emit('game-select-player', response.toJson());
@@ -136,7 +186,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       setState(() {
         BackendGameSelectCardJSON SelectCardData = BackendGameSelectCardJSON.fromJson(data);
         //TODO: el usuario elegirá la carta
-        String selectedCard = "Attack";
+        CardJSON selectedCard = CardJSON(id: 0, type: "Attack"); //FIXME
         FrontendGameSelectCardResponseJSON response = FrontendGameSelectCardResponseJSON(
           error: false,
           errorMsg: "",
@@ -168,7 +218,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
 
   void sendGameAction(List<int> selectedCardIndices) {
-    List<String> playedCards = selectedCardIndices.isEmpty
+    List<CardJSON> playedCards = selectedCardIndices.isEmpty
         ? []  // Si la lista está vacía, asignamos una lista vacía
         : selectedCardIndices.map((index) => playerCards[index]).toList();
 
@@ -181,7 +231,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
     FrontendGamePlayedCardsJSON gamePlayedData = FrontendGamePlayedCardsJSON(
       error: false,
       errorMsg: "",
-      playedCards: playedCardsJson,
+      playedCards: playedCards,
       lobbyId: widget.lobbyId,
     );
 
@@ -204,9 +254,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         setState(() {
           print("Actualizando estado");
           //TODO: METER NUEVA CARTA SI HA ROBADO
-          if (response.cardsReceived != ""){
-            playedCards.add(response.cardsReceived);
-          }
         });
       }
     });
@@ -216,14 +263,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
   void startTimer() {
     timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (remainingTime > 0) {
-        setState(() {
-          remainingTime--;
-        });
-      } else {
-        timer.cancel();
-        List<int> empty = [];
-        sendGameAction(empty);
+      if (mounted) {
+        if (remainingTime > 0) {
+          setState(() {
+            remainingTime--;
+          });
+        } else {
+          timer.cancel();
+          List<int> empty = [];
+          sendGameAction(empty);
+        }
       }
     });
   }
@@ -358,7 +407,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                   child: Row(
                     children: playerCards.asMap().entries.map((entry) {
                       int index = entry.key;
-                      String cardName = entry.value;
+                      String cardName = entry.value.type;
                       String imagePath = 'assets/images/$cardName.jpg';
                       bool isSelected = selectedCards.contains(index);
                       double cardHeight = isSelected ? 170 : 150;
@@ -446,7 +495,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Player ${player.id}',
+                'Player ${player.id}', //FIXME change to username
                 style: TextStyle(
                   color: player.active ? Colors.black : Colors.grey[600],
                   fontSize: 18,

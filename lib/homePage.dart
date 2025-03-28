@@ -48,15 +48,11 @@ class _MainScreenState extends State<MainScreen> {
       'errorMsg': '',
       'maxPlayers': maxPlayers,
     };
-    print('Antes de emit');
     socket.emit("create-lobby", [lobbyRequest]);
-    print('después');
 
 // Escuchar la respuesta del servidor
     socket.on("create-lobby", (dynamic response) {
-      print('once');
       if (response != null && response['error'] == false) {
-        print('IF');
         String lobbyId = response['lobbyId'];
         Navigator.push(
           context,
