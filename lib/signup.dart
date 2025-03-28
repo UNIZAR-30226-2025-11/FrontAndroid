@@ -81,7 +81,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MainScreen(username: usernameController.text,)), // Placeholder
+      //MaterialPageRoute(builder: (context) => MainScreen(username: usernameController.text,)), // Placeholder
+      MaterialPageRoute(builder: (context) => LoginScreen()), // Placeholder
     );
   }
 

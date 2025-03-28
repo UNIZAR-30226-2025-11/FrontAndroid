@@ -3,7 +3,11 @@ import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+
+
+import 'SessionManager.dart';
 import 'homePage.dart';
 
 
@@ -19,10 +23,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final _storage = FlutterSecureStorage();
 
+  // FIXME: probar
+  Future<void> checkSession() async {
+    String? token = await SessionManager.getSessionData();
+    String? username = await SessionManager.getUsername(); // Esperar el valor del nombre de usuario
+
+    if (token != null) {
+      // Si hay un token guardado, redirige al usuario
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen(username: username ?? "")), // Pasar el username de forma segura
+      );
+    }
+  }
   @override
   void initState() {
     super.initState();
+    checkSession(); // FIXME: probar
   }
 
   void _showSnackBar(String message) {
@@ -59,7 +78,9 @@ class _LoginScreenState extends State<LoginScreen> {
         "username": usernameController.text,
         "password": passwordController.text,
       }),
+
     );
+
     final data = jsonDecode(response.body);
     if (response.statusCode != 200){
       // Saca el mensaje de error del cuerpo
@@ -68,6 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _showSnackBar(errorMessage);
       return;
     }
+
+    await SessionManager.saveSessionData(data['token']); // FIXME: probar
+    await SessionManager.saveUsername(usernameController.text); // FIXME: probar
 
     //print("Login successful: ${data['message']}");
     print("Login successful");
