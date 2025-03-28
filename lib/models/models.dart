@@ -1,30 +1,6 @@
 
 
-class BackendNotifyActionJSON {
-  final bool error;
-  final String errorMsg;
-  final int creatorId;
-  final int actionedPlayerId;
-  final String action;
-
-  BackendNotifyActionJSON({
-    required this.error,
-    required this.errorMsg,
-    required this.creatorId,
-    required this.actionedPlayerId,
-    required this.action,
-  });
-
-  factory BackendNotifyActionJSON.fromJson(Map<String, dynamic> json) {
-    return BackendNotifyActionJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg'],
-      creatorId: json['creatorId'],
-      actionedPlayerId: json['actionedPlayerId'],
-      action: json['action'],
-    );
-  }
-}
+import 'package:flutter/material.dart';
 
 // lib/models.dart
 
@@ -52,36 +28,69 @@ class PlayerJSON {
   }
 }
 
+class CardJSON {
+  final int id;
+  final String type;
+
+  CardJSON({
+    required this.id,
+    required this.type,
+  });
+
+  factory CardJSON.fromJson(Map<String, dynamic> json) {
+    return CardJSON(
+      id: json['id'],
+      type: json['type'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+    };
+  }
+}
+
 class BackendStateUpdateJSON {
   final bool error;
   final String errorMsg;
-  final String playerCards;
+  final String lobbyID;
+  final List<CardJSON> playerCards;
   final List<PlayerJSON> players;
-  final int turn;
+  final String turnUsername;
   final int timeOut;
-  final int playerId;
+  final String username;
+  final int cardsLeftInDeck;
 
   BackendStateUpdateJSON({
     required this.error,
     required this.errorMsg,
+    required this.lobbyID,
     required this.playerCards,
     required this.players,
-    required this.turn,
+    required this.turnUsername,
     required this.timeOut,
-    required this.playerId,
+    required this.username,
+    required this.cardsLeftInDeck,
+
   });
 
   factory BackendStateUpdateJSON.fromJson(Map<String, dynamic> json) {
     return BackendStateUpdateJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
-      playerCards: json['playerCards'],
+      lobbyID: json['lobbyID'],
+      playerCards: (json['playerCards'] as List)
+          .map((cards) => CardJSON.fromJson(cards))
+          .toList(),
       players: (json['players'] as List)
           .map((player) => PlayerJSON.fromJson(player))
           .toList(),
-      turn: json['turn'],
+      turnUsername: json['turnUsername'],
       timeOut: json['timeOut'],
-      playerId: json['playerId'],
+      username: json['playerUsername'],
+      cardsLeftInDeck: json['cardsLeftInDeck']
     );
   }
 
@@ -89,11 +98,13 @@ class BackendStateUpdateJSON {
     return {
       'error': error,
       'errorMsg': errorMsg,
-      'playerCards': playerCards,
+      'lobbyID': lobbyID,
+      'playerCards': playerCards.map((cards) => cards.toJson()).toList(),
       'players': players.map((player) => player.toJson()).toList(),
-      'turn': turn,
+      'turnUsername': turnUsername,
       'timeOut': timeOut,
-      'playerId': playerId,
+      'username': username,
+      'cardsLeftInDeck': cardsLeftInDeck,
     };
   }
 }
@@ -101,7 +112,7 @@ class BackendStateUpdateJSON {
 class FrontendGamePlayedCardsJSON {
   final bool error;
   final String errorMsg;
-  final String playedCards;
+  final List<CardJSON> playedCards;
   final String lobbyId;
 
   FrontendGamePlayedCardsJSON({
@@ -115,7 +126,9 @@ class FrontendGamePlayedCardsJSON {
     return FrontendGamePlayedCardsJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
-      playedCards: json['playedCards'],
+      playedCards: (json['playedCards'] as List)
+          .map((cards) => CardJSON.fromJson(cards))
+          .toList(),
       lobbyId: json['lobbyId'],
     );
   }
@@ -124,7 +137,7 @@ class FrontendGamePlayedCardsJSON {
     return {
       'error': error,
       'errorMsg': errorMsg,
-      'playedCards': playedCards,
+      'playedCards': playedCards.map((cards) => cards.toJson()).toList(),
       'lobbyId': lobbyId,
     };
   }
@@ -133,22 +146,24 @@ class FrontendGamePlayedCardsJSON {
 class BackendGamePlayedCardsResponseJSON {
   final bool error;
   final String errorMsg;
-  final String cardsSeeFuture;
-  final String cardsReceived;
+  final List<CardJSON> cardsSeeFuture;
+  final CardJSON cardReceived;
 
   BackendGamePlayedCardsResponseJSON({
     required this.error,
     required this.errorMsg,
     required this.cardsSeeFuture,
-    required this.cardsReceived
+    required this.cardReceived
   });
 
   factory BackendGamePlayedCardsResponseJSON.fromJson(Map<String, dynamic> json) {
     return BackendGamePlayedCardsResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
-      cardsSeeFuture: json['cardsSeeFuture'],
-      cardsReceived: json['cardsReceived'],
+      cardsSeeFuture: (json['cardsSeeFuture'] as List)
+          .map((cards) => CardJSON.fromJson(cards))
+          .toList(),
+      cardReceived: json['cardsReceived'],
     );
   }
 
@@ -157,7 +172,7 @@ class BackendGamePlayedCardsResponseJSON {
       'error': error,
       'errorMsg': errorMsg,
       'cardsSeeFuture': cardsSeeFuture,
-      'cardsReceived': cardsReceived,
+      'cardsReceived': cardReceived,
     };
   }
 }
@@ -165,22 +180,25 @@ class BackendGamePlayedCardsResponseJSON {
 class BackendWinnerJSON {
   final bool error;
   final String errorMsg;
-  final int userId;
+  final String winnerUsername;
   final int coinsEarned;
+  final String lobbyId;
 
   BackendWinnerJSON({
     required this.error,
     required this.errorMsg,
-    required this.userId,
+    required this.winnerUsername,
     required this.coinsEarned,
+    required this.lobbyId,
   });
 
   factory BackendWinnerJSON.fromJson(Map<String, dynamic> json) {
     return BackendWinnerJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
-      userId: json['userId'],
+      winnerUsername: json['winnerUsername'],
       coinsEarned: json['coinsEarned'],
+      lobbyId: json['lobbyId']
     );
   }
 
@@ -188,8 +206,45 @@ class BackendWinnerJSON {
     return {
       'error': error,
       'errorMsg': errorMsg,
-      'userId': userId,
+      'winnerUsername': winnerUsername,
       'coinsEarned': coinsEarned,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
+class FrontendWinnerResponseJSON {
+  final bool error;
+  final String errorMsg;
+  final String winnerUsername;
+  final int coinsEarned;
+  final String lobbyId;
+
+  FrontendWinnerResponseJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.winnerUsername,
+    required this.coinsEarned,
+    required this.lobbyId,
+  });
+
+  factory FrontendWinnerResponseJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendWinnerResponseJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        winnerUsername: json['winnerUsername'],
+        coinsEarned: json['coinsEarned'],
+        lobbyId: json['lobbyId']
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'winnerUsername': winnerUsername,
+      'coinsEarned': coinsEarned,
+      'lobbyId': lobbyId,
     };
   }
 }
@@ -198,11 +253,13 @@ class BackendGameSelectPlayerJSON {
   final bool error;
   final String errorMsg;
   final String lobbyId;
+  final int timeOut;
 
   BackendGameSelectPlayerJSON({
     required this.error,
     required this.errorMsg,
     required this.lobbyId,
+    required this.timeOut,
   });
 
   factory BackendGameSelectPlayerJSON.fromJson(Map<String, dynamic> json) {
@@ -210,6 +267,7 @@ class BackendGameSelectPlayerJSON {
       error: json['error'],
       errorMsg: json['errorMsg'],
       lobbyId: json['lobbyId'],
+      timeOut: json['timeOut']
     );
   }
 
@@ -218,6 +276,7 @@ class BackendGameSelectPlayerJSON {
       'error': error,
       'errorMsg': errorMsg,
       'lobbyId': lobbyId,
+      'timeOut': timeOut,
     };
   }
 }
@@ -225,13 +284,13 @@ class BackendGameSelectPlayerJSON {
 class FrontendGameSelectPlayerResponseJSON {
   final bool error;
   final String errorMsg;
-  final int userId;
+  final String playerUsername;
   final String lobbyId;
 
   FrontendGameSelectPlayerResponseJSON({
     required this.error,
     required this.errorMsg,
-    required this.userId,
+    required this.playerUsername,
     required this.lobbyId,
   });
 
@@ -239,7 +298,7 @@ class FrontendGameSelectPlayerResponseJSON {
     return FrontendGameSelectPlayerResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
-      userId: json['userId'],
+      playerUsername: json['playerUsername'],
       lobbyId: json['lobbyId'],
     );
   }
@@ -248,7 +307,7 @@ class FrontendGameSelectPlayerResponseJSON {
     return {
       'error': error,
       'errorMsg': errorMsg,
-      'userId': userId,
+      'userId': playerUsername,
       'lobbyId': lobbyId,
     };
   }
@@ -258,11 +317,13 @@ class BackendGameSelectCardJSON {
   final bool error;
   final String errorMsg;
   final String lobbyId;
+  final int timeOut;
 
   BackendGameSelectCardJSON({
     required this.error,
     required this.errorMsg,
     required this.lobbyId,
+    required this.timeOut,
   });
 
   factory BackendGameSelectCardJSON.fromJson(Map<String, dynamic> json) {
@@ -270,6 +331,7 @@ class BackendGameSelectCardJSON {
       error: json['error'],
       errorMsg: json['errorMsg'],
       lobbyId: json['lobbyId'],
+      timeOut: json['timeOut'],
     );
   }
 
@@ -278,6 +340,7 @@ class BackendGameSelectCardJSON {
       'error': error,
       'errorMsg': errorMsg,
       'lobbyId': lobbyId,
+      'timeOut': timeOut,
     };
   }
 }
@@ -285,7 +348,7 @@ class BackendGameSelectCardJSON {
 class FrontendGameSelectCardResponseJSON {
   final bool error;
   final String errorMsg;
-  final String card;
+  final CardJSON card;
   final String lobbyId;
 
   FrontendGameSelectCardResponseJSON({
@@ -318,11 +381,13 @@ class BackendGameSelectCardTypeJSON {
   final bool error;
   final String errorMsg;
   final String lobbyId;
+  final int timeOut;
 
   BackendGameSelectCardTypeJSON({
     required this.error,
     required this.errorMsg,
     required this.lobbyId,
+    required this.timeOut,
   });
 
   factory BackendGameSelectCardTypeJSON.fromJson(Map<String, dynamic> json) {
@@ -330,6 +395,7 @@ class BackendGameSelectCardTypeJSON {
       error: json['error'],
       errorMsg: json['errorMsg'],
       lobbyId: json['lobbyId'],
+      timeOut: json['timeOut'],
     );
   }
 
@@ -338,6 +404,7 @@ class BackendGameSelectCardTypeJSON {
       'error': error,
       'errorMsg': errorMsg,
       'lobbyId': lobbyId,
+      'timeOut': timeOut,
     };
   }
 }
@@ -373,6 +440,71 @@ class FrontendGameSelectCardTypeResponseJSON {
     };
   }
 }
+
+class BackendGameSelectNopeJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+  final int timeOut;
+
+  BackendGameSelectNopeJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+    required this.timeOut,
+  });
+
+  factory BackendGameSelectNopeJSON.fromJson(Map<String, dynamic> json) {
+    return BackendGameSelectNopeJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        lobbyId: json['lobbyId'],
+        timeOut: json['timeOut'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+      'timeOut': timeOut,
+    };
+  }
+}
+
+class FrontendGameSelectNopeResponseJSON {
+  final bool error;
+  final String errorMsg;
+  final bool useNope;
+  final String lobbyId;
+
+  FrontendGameSelectNopeResponseJSON ({
+    required this.error,
+    required this.errorMsg,
+    required this.useNope,
+    required this.lobbyId,
+  });
+
+  factory FrontendGameSelectNopeResponseJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendGameSelectNopeResponseJSON(
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      useNope: json['useNope'],
+      lobbyId: json['lobbyId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'useNope': useNope,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
 
 class FrontendCreateLobbyJSON {
   final bool error;
@@ -430,6 +562,7 @@ class BackendCreateLobbyResponseJSON {
   }
 }
 
+
 class FrontendJoinLobbyJSON {
   final bool error;
   final String errorMsg;
@@ -461,16 +594,162 @@ class FrontendJoinLobbyJSON {
 class BackendJoinLobbyResponseJSON {
   final bool error;
   final String errorMsg;
+  final String lobbyId;
 
   BackendJoinLobbyResponseJSON({
     required this.error,
     required this.errorMsg,
+    required this.lobbyId,
   });
 
   factory BackendJoinLobbyResponseJSON.fromJson(Map<String, dynamic> json) {
     return BackendJoinLobbyResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
+      lobbyId: json['lobbyId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
+class BackendLobbyStateUpdateJSON {
+  final bool error;
+  final String errorMsg;
+  final List<PlayerLobbyJSON> players;
+  final bool disband;
+  final String lobbyId;
+
+  BackendLobbyStateUpdateJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.players,
+    required this.disband,
+    required this.lobbyId,
+  });
+
+  factory BackendLobbyStateUpdateJSON.fromJson(Map<String, dynamic> json) {
+    return BackendLobbyStateUpdateJSON(
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      players: (json['players'] as List)
+          .map((players) => PlayerLobbyJSON.fromJson(players))
+          .toList(),
+      disband: json['disband'],
+      lobbyId: json['lobbyId']
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'players': players,
+      'disband': disband,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
+class PlayerLobbyJSON {
+  final String name;
+  final bool isLeader;
+
+  PlayerLobbyJSON({
+    required this.name,
+    required this.isLeader,
+  });
+
+  factory PlayerLobbyJSON.fromJson(Map<String, dynamic> json) {
+    return PlayerLobbyJSON(
+        name: json['name'],
+        isLeader: json['isLeader'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'isLeader': isLeader,
+    };
+  }
+}
+
+class FrontendStartLobbyJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+
+  FrontendStartLobbyJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+  });
+
+  factory FrontendStartLobbyJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendStartLobbyJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        lobbyId: json['lobbyId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
+class BackendStartLobbyResponseJSON {
+  final bool error;
+  final String errorMsg;
+  final int numPlayers;
+
+  BackendStartLobbyResponseJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.numPlayers,
+  });
+
+  factory BackendStartLobbyResponseJSON.fromJson(Map<String, dynamic> json) {
+    return BackendStartLobbyResponseJSON(
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      numPlayers: json['numPlayers'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return{
+      'error': error,
+      'errorMsg': errorMsg,
+      'numPlayers': numPlayers,
+    };
+  }
+}
+
+class BackendStartGameResponseJSON {
+  final bool error;
+  final String errorMsg;
+
+  BackendStartGameResponseJSON({
+    required this.error,
+    required this.errorMsg,
+  });
+
+  factory BackendStartGameResponseJSON.fromJson(Map<String, dynamic> json) {
+    return BackendStartGameResponseJSON(
+      error: json['error'],
+      errorMsg: json['errorMsg']
     );
   }
 
@@ -481,3 +760,170 @@ class BackendJoinLobbyResponseJSON {
     };
   }
 }
+
+
+class BackendNotifyActionJSON {
+  final bool error;
+  final String errorMsg;
+  final String triggerUser;
+  final String targetUser;
+  final String action;
+
+  BackendNotifyActionJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.triggerUser,
+    required this.targetUser,
+    required this.action,
+  });
+
+  factory BackendNotifyActionJSON.fromJson(Map<String, dynamic> json) {
+    return BackendNotifyActionJSON(
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      triggerUser: json['triggerUser'],
+      targetUser: json['targetUser'],
+      action: json['action'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'triggerUser': triggerUser,
+      'targetUser': targetUser,
+      'action': action,
+    };
+  }
+}
+
+class BackendPlayerStatusJSON {
+  final bool error;
+  final String errorMsg;
+  final String playerUsername;
+  final bool connected;
+
+  BackendPlayerStatusJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.playerUsername,
+    required this.connected,
+  });
+
+  factory BackendPlayerStatusJSON.fromJson(Map<String, dynamic> json) {
+    return BackendPlayerStatusJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        playerUsername: json['playerUsername'],
+        connected: json['connected'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'playerUsername':playerUsername,
+      'connected': connected,
+    };
+  }
+}
+
+
+class FrontendPostMsgJSON {
+  final bool error;
+  final String errorMsg;
+  final String msg;
+  final String lobbyId;
+
+  FrontendPostMsgJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.msg,
+    required this.lobbyId,
+  });
+
+  factory FrontendPostMsgJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendPostMsgJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        msg: json['msg'],
+        lobbyId: json['lobbyId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'msg': msg,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
+class BackendGetMessagesJSON {
+  final bool error;
+  final String errorMsg;
+  final List<MsgJSON> messages;
+  final String lobbyId;
+
+  BackendGetMessagesJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.messages,
+    required this.lobbyId,
+  });
+
+  factory BackendGetMessagesJSON.fromJson(Map<String, dynamic> json) {
+    return BackendGetMessagesJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        messages: (json['messages'] as List)
+        .map((msgs) => MsgJSON.fromJson(msgs))
+        .toList(),
+        lobbyId: json['lobbyId'],
+    );
+
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'messages': messages,
+      'lobbyId': lobbyId,
+    };
+  }
+}
+
+class MsgJSON {
+  final String msg;
+  final String username;
+  final String date;
+
+  MsgJSON({
+    required this.msg,
+    required this.username,
+    required this.date,
+  });
+
+  factory MsgJSON.fromJson(Map<String, dynamic> json) {
+    return MsgJSON(
+        msg: json['msg'],
+        username: json['username'],
+        date: json['date'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'msg': msg,
+      'username': username,
+      'date': date,
+    };
+  }
+}
+
+
