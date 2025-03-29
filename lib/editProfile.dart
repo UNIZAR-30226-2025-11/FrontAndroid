@@ -9,7 +9,8 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   void _showSnackBar(String message) {
     var scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -51,7 +52,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("Confirm Deletion"),
-          content: Text("Are you sure you want to delete your account? This action cannot be undone."),
+          content: Text(
+              "Are you sure you want to delete your account? This action cannot be undone."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -112,7 +114,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ElevatedButton(
                 onPressed: _confirmDeleteAccount,
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: Text("Delete Account", style: TextStyle(color: Colors.white)),
+                child: Text("Delete Account",
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),

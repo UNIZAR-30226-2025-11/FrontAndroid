@@ -10,7 +10,8 @@ class StartGameScreen extends StatefulWidget {
   final String lobbyId; // Se necesita el ID del lobby
   final String username;
 
-  StartGameScreen({required this.socket, required this.lobbyId,required this.username});
+  StartGameScreen(
+      {required this.socket, required this.lobbyId, required this.username});
 
   @override
   _StartGameScreenState createState() => _StartGameScreenState();
@@ -43,7 +44,9 @@ class _StartGameScreenState extends State<StartGameScreen> {
           //players = lobbyUpdate.players
           players = (lobbyUpdate.players as List)
               .map((player) => PlayerLobbyJSON.fromJson(player))
-              .where((player) => player.name != username) //FIXME mostrarme como miembro del lobby?
+              .where((player) =>
+                  player.name !=
+                  username) //FIXME mostrarme como miembro del lobby?
               .toList();
         });
       } catch (e) {
@@ -51,12 +54,12 @@ class _StartGameScreenState extends State<StartGameScreen> {
         print('Error parsing lobby update: $e');
       }
     });
-
   }
 
   @override
   void dispose() {
-    widget.socket.off('lobby-updated'); // Detener la escucha cuando se destruye la pantalla
+    widget.socket.off(
+        'lobby-updated'); // Detener la escucha cuando se destruye la pantalla
     super.dispose();
   }
 
@@ -104,8 +107,13 @@ class _StartGameScreenState extends State<StartGameScreen> {
       if (data['error'] == false) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(socket:
-          widget.socket,lobbyId: widget.lobbyId,initialGameState: initialGameState ?? {},username: username,)),
+          MaterialPageRoute(
+              builder: (context) => GameScreen(
+                    socket: widget.socket,
+                    lobbyId: widget.lobbyId,
+                    initialGameState: initialGameState ?? {},
+                    username: username,
+                  )),
         );
       } else {
         setState(() {
@@ -113,11 +121,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
         });
       }
     });
-
-
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +135,8 @@ class _StartGameScreenState extends State<StartGameScreen> {
           // 🏷️ Muestra el lobby ID en la parte superior
           Text(
             'Lobby ID: ${widget.lobbyId}',
-            style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
           ),
 
           SizedBox(height: 80),
@@ -172,7 +177,8 @@ class _StartGameScreenState extends State<StartGameScreen> {
           SizedBox(height: 20),
 
           ElevatedButton(
-            onPressed: startLobby, // Llamada a startLobby en lugar de startGame directamente
+            onPressed:
+                startLobby, // Llamada a startLobby en lugar de startGame directamente
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: Colors.black,

@@ -7,24 +7,24 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import 'models/models.dart';
 
-
-
-
-
 class GameScreen extends StatefulWidget {
   final IO.Socket socket;
   final String lobbyId;
   final String username;
-  final int coins=3;
+  final int coins = 3;
   final Map<String, dynamic> initialGameState;
 
-  GameScreen({required this.socket, required this.lobbyId, required this.initialGameState, required this.username});
+  GameScreen(
+      {required this.socket,
+      required this.lobbyId,
+      required this.initialGameState,
+      required this.username});
 
   @override
   _GameScreenState createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
+class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late IO.Socket socket;
   bool error = false;
   String errorMsg = "";
@@ -32,8 +32,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   List<PlayerJSON> players = [];
   int turn = 0;
   int timeOut = 0;
-  String turnUsername="";
-  int cardsLeftInDeck=0;
+  String turnUsername = "";
+  int cardsLeftInDeck = 0;
 
   final ScrollController _scrollController = ScrollController();
   List<int> selectedCards = [];
@@ -44,7 +44,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
   List<Map<String, dynamic>> animatingCards = [];
   bool isAnimating = false;
 
-  final myId =1;
+  final myId = 1;
 
   @override
   void initState() {
@@ -60,16 +60,18 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         print(data['playerCards']);
         //playerCards = List<String>.from(data['playerCards']);
         playerCards = List<CardJSON>.from(jsonDecode(data['playerCards']));
-        print(data['playerCards']);  // Para ver qué tipo de dato es
+        print(data['playerCards']); // Para ver qué tipo de dato es
         players = (data['players'] as List)
             .map((player) => PlayerJSON.fromJson(player))
-            .where((player) => player.playerUsername != username) //FIXME cambiar id por username?
+            .where((player) =>
+                player.playerUsername !=
+                username) //FIXME cambiar id por username?
             .toList();
         turn = data['turn'];
         timeOut = data['timeOut'];
         remainingTime = timeOut;
         turnUsername = data['turnUsername'];
-        cardsLeftInDeck  = data ['cardsLeftInDeck'];
+        cardsLeftInDeck = data['cardsLeftInDeck'];
       });
       print('fin');
     }
@@ -79,7 +81,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
   void setupSocketListeners() {
     socket.on('game-state', (data) {
-      if (mounted) {  // Add this check
+      if (mounted) {
+        // Add this check
         setState(() {
           error = data['error'];
           errorMsg = data['errorMsg'];
@@ -92,11 +95,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
           timeOut = data['timeOut'];
           remainingTime = timeOut;
           turnUsername = data['turnUsername'];
-          cardsLeftInDeck  = data ['cardsLeftInDeck'];
+          cardsLeftInDeck = data['cardsLeftInDeck'];
         });
       }
     });
-
 
     remainingTime = timeOut;
 
@@ -104,8 +106,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       PlayerJSON target = action['targetUser'];
       PlayerJSON trigger = action['triggerUser'];
       String act = action['action'];
-      switch(act){
-      // TODO: realizar accion según campo action
+      switch (act) {
+        // TODO: realizar accion según campo action
       }
     }
 
@@ -121,8 +123,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       if (winnerData.error) {
         print('Error: ${winnerData.errorMsg}');
       } else {
-        print('Jugador ${winnerData.winnerUsername} ha ganado y ha ganado ${winnerData
-            .coinsEarned} coins');
+        print(
+            'Jugador ${winnerData.winnerUsername} ha ganado y ha ganado ${winnerData.coinsEarned} coins');
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -154,10 +156,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
             );
           },
         );
-
       }
     }
-
 
     socket.on('winner', (data) {
       setState(() {
@@ -168,7 +168,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
     socket.on('game-select-player', (data) {
       setState(() {
-        BackendGameSelectPlayerJSON selectPlayerData = BackendGameSelectPlayerJSON.fromJson(data);
+        BackendGameSelectPlayerJSON selectPlayerData =
+            BackendGameSelectPlayerJSON.fromJson(data);
         int timeLeft = selectPlayerData.timeOut;
 
         // Show dialog to select a player
@@ -190,7 +191,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                         title: Text(player.playerUsername),
                         onTap: () {
                           // Send selected player back to the server
-                          FrontendGameSelectPlayerResponseJSON response = FrontendGameSelectPlayerResponseJSON(
+                          FrontendGameSelectPlayerResponseJSON response =
+                              FrontendGameSelectPlayerResponseJSON(
                             error: false,
                             errorMsg: "",
                             playerUsername: player.playerUsername,
@@ -212,10 +214,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       });
     });
 
-
     socket.on('game-select-card', (data) {
       setState(() {
-        BackendGameSelectCardJSON selectCardData = BackendGameSelectCardJSON.fromJson(data);
+        BackendGameSelectCardJSON selectCardData =
+            BackendGameSelectCardJSON.fromJson(data);
         int timeLeft = selectCardData.timeOut;
 
         // Show dialog to select a card
@@ -247,7 +249,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                       return GestureDetector(
                         onTap: () {
                           // Send selected card back to the server
-                          FrontendGameSelectCardResponseJSON response = FrontendGameSelectCardResponseJSON(
+                          FrontendGameSelectCardResponseJSON response =
+                              FrontendGameSelectCardResponseJSON(
                             error: false,
                             errorMsg: "",
                             card: card,
@@ -267,7 +270,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                             children: [
                               Expanded(
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(10)),
                                   child: Image.asset(
                                     imagePath,
                                     fit: BoxFit.cover,
@@ -297,11 +301,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       });
     });
 
-
-
     socket.on('game-select-card-type', (data) {
       setState(() {
-        BackendGameSelectCardTypeJSON selectCardTypeData = BackendGameSelectCardTypeJSON.fromJson(data);
+        BackendGameSelectCardTypeJSON selectCardTypeData =
+            BackendGameSelectCardTypeJSON.fromJson(data);
         int timeLeft = selectCardTypeData.timeOut;
 
         // Show dialog to select a card type
@@ -328,18 +331,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                     itemCount: CardType.values.length,
                     itemBuilder: (context, index) {
                       CardType cardType = CardType.values[index];
-                      String imagePath = 'assets/images/${cardType.toString().split('.').last}.jpg';
+                      String imagePath =
+                          'assets/images/${cardType.toString().split('.').last}.jpg';
 
                       return GestureDetector(
                         onTap: () {
                           // Send selected card type back to the server
-                          FrontendGameSelectCardTypeResponseJSON response = FrontendGameSelectCardTypeResponseJSON(
+                          FrontendGameSelectCardTypeResponseJSON response =
+                              FrontendGameSelectCardTypeResponseJSON(
                             error: false,
                             errorMsg: "",
-                            cardType: cardType.toString().split('.').last, // Send just the type name
+                            cardType: cardType
+                                .toString()
+                                .split('.')
+                                .last, // Send just the type name
                             lobbyId: widget.lobbyId,
                           );
-                          socket.emit('game-select-card-type', response.toJson());
+                          socket.emit(
+                              'game-select-card-type', response.toJson());
 
                           // Close the dialog
                           Navigator.of(context).pop();
@@ -361,7 +370,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                               ),
                               SizedBox(height: 8),
                               Text(
-                                cardType.toString().split('.').last, // Display type name
+                                cardType
+                                    .toString()
+                                    .split('.')
+                                    .last, // Display type name
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
@@ -381,15 +393,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         );
       });
     });
-
-
-
   }
-
 
   void sendGameAction(List<int> selectedCardIndices) {
     List<CardJSON> playedCards = selectedCardIndices.isEmpty
-        ? []  // Si la lista está vacía, asignamos una lista vacía
+        ? [] // Si la lista está vacía, asignamos una lista vacía
         : selectedCardIndices.map((index) => playerCards[index]).toList();
 
     // Usar jsonEncode para convertir la lista a una cadena JSON (incluso si es vacía)
@@ -411,8 +419,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
     socket.on('game-played-cards', (data) {
       print("respuesta a cartas recibida");
-      BackendGamePlayedCardsResponseJSON response = BackendGamePlayedCardsResponseJSON
-          .fromJson(data);
+      BackendGamePlayedCardsResponseJSON response =
+          BackendGamePlayedCardsResponseJSON.fromJson(data);
 
       if (response.error) {
         setState(() {
@@ -428,8 +436,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       }
     });
   }
-
-
 
   void startTimer() {
     timer = Timer.periodic(Duration(seconds: 1), (timer) {
@@ -468,6 +474,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -476,62 +483,66 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
         automaticallyImplyLeading: false,
       ),*/
       backgroundColor: Color(0xFF9D0514),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 48,
-            right: 30,
-            child: Row(
-              children: [
-                SizedBox(width: 8),
-                Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                SizedBox(width: 8),
-                Text('5 coins', style: TextStyle(color: Colors.white, fontSize: 18)),
-              ],
-            ),
+      body: Stack(children: [
+        Positioned(
+          top: 48,
+          right: 30,
+          child: Row(
+            children: [
+              SizedBox(width: 8),
+              Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+              SizedBox(width: 8),
+              Text('5 coins',
+                  style: TextStyle(color: Colors.white, fontSize: 18)),
+            ],
           ),
-          Positioned(
-            top: 40,
-            left: 30,
-            child: Row(
-              children: [
-                SizedBox(width: 8),
-                Icon(Icons.person, size: 30, color: Colors.white),
-                SizedBox(width: 8),
-                Text(
-                    username,
-                    style: TextStyle(
-                        color: turnUsername == username ? Colors.yellow : Colors.white,
-                        fontSize: 18,
-                        fontWeight: turnUsername == username ? FontWeight.bold : FontWeight.normal
-                    )
-                ),
-              ],
-            ),
+        ),
+        Positioned(
+          top: 40,
+          left: 30,
+          child: Row(
+            children: [
+              SizedBox(width: 8),
+              Icon(Icons.person, size: 30, color: Colors.white),
+              SizedBox(width: 8),
+              Text(username,
+                  style: TextStyle(
+                      color: turnUsername == username
+                          ? Colors.yellow
+                          : Colors.white,
+                      fontSize: 18,
+                      fontWeight: turnUsername == username
+                          ? FontWeight.bold
+                          : FontWeight.normal)),
+            ],
           ),
+        ),
         // Only display other players, not the current player
-          if (players.isNotEmpty)
-            Positioned(
-              top: 50,
-              left: MediaQuery.of(context).size.width / 2 - 60,
-              child: buildPlayerCard(players[0],isCurrentTurn: players[0].playerUsername == turnUsername),
-            ),
-          if (players.length >= 2)
-            Positioned(
-              bottom: 400,
-              left: 25,
-              child: buildPlayerCard(players[1],isCurrentTurn: players[0].playerUsername == turnUsername),
-            ),
-          if (players.length >= 3)
-            Positioned(
-              bottom: 400,
-              right: 25,
-              child: buildPlayerCard(players[2],isCurrentTurn: players[0].playerUsername == turnUsername),
-            ),
+        if (players.isNotEmpty)
           Positioned(
-            bottom: 220,
-            left: MediaQuery.of(context).size.width / 2 - 15,
-            /*child: SizedBox(
+            top: 50,
+            left: MediaQuery.of(context).size.width / 2 - 60,
+            child: buildPlayerCard(players[0],
+                isCurrentTurn: players[0].playerUsername == turnUsername),
+          ),
+        if (players.length >= 2)
+          Positioned(
+            bottom: 400,
+            left: 25,
+            child: buildPlayerCard(players[1],
+                isCurrentTurn: players[0].playerUsername == turnUsername),
+          ),
+        if (players.length >= 3)
+          Positioned(
+            bottom: 400,
+            right: 25,
+            child: buildPlayerCard(players[2],
+                isCurrentTurn: players[0].playerUsername == turnUsername),
+          ),
+        Positioned(
+          bottom: 220,
+          left: MediaQuery.of(context).size.width / 2 - 15,
+          /*child: SizedBox(
               width: 25,
               height: 25,
               child: CircularProgressIndicator(
@@ -541,100 +552,100 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
                 strokeWidth: 25,
               ),
             ),*/
-            child: _buildTimerIndicator(),
+          child: _buildTimerIndicator(),
+        ),
+        Positioned(
+          bottom: 210,
+          left: MediaQuery.of(context).size.width / 2 - 150,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3
+                    ? () {
+                        _animatePlayedCards();
+                        //sendGameAction(selectedCards);
+                      }
+                    : null,
+                child: Text('Play Cards'),
+              ),
+              SizedBox(width: 60),
+              ElevatedButton(
+                onPressed: () {
+                  // Acción de robar carta
+                  List<int> empty = [];
+                  sendGameAction(empty);
+                },
+                child: Text('Steal a Card'),
+              ),
+            ],
           ),
-          Positioned(
-            bottom: 210,
-            left: MediaQuery.of(context).size.width / 2 - 150,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3
-                      ? () {
-                    _animatePlayedCards();
-                    //sendGameAction(selectedCards);
-                  }
-                      : null,
-                  child: Text('Play Cards'),
-                ),
-                SizedBox(width: 60),
-                ElevatedButton(
-                  onPressed: () {
-                    // Acción de robar carta
-                    List<int> empty = [];
-                    sendGameAction(empty);
-                  },
-                  child: Text('Steal a Card'),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            left: MediaQuery.of(context).size.width / 2 - 150,
-            child: Container(
-              height: 180,
-              width: 300,
-              child: Scrollbar(
+        ),
+        Positioned(
+          bottom: 20,
+          left: MediaQuery.of(context).size.width / 2 - 150,
+          child: Container(
+            height: 180,
+            width: 300,
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
                 controller: _scrollController,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: playerCards.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      String cardName = entry.value.type;
-                      String imagePath = 'assets/images/$cardName.jpg';
-                      bool isSelected = selectedCards.contains(index);
-                      double cardHeight = isSelected ? 170 : 150;
-                      double cardWidth = isSelected ? 115 : 100;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (selectedCards.contains(index)) {
-                              selectedCards.remove(index);
-                            } else {
-                              selectedCards.add(index);
-                            }
-                          });
-                        },
-                        child: AnimatedContainer(
-                            duration: Duration(milliseconds: 150),
-                            margin: EdgeInsets.symmetric(horizontal: 8.0),
-                            height: cardHeight,
-                            width: cardWidth,
-                            decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: isSelected ? [
-                              BoxShadow(
-                              color: Colors.yellow.withOpacity(0.8),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                              )
-                              ] : [],
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: playerCards.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    String cardName = entry.value.type;
+                    String imagePath = 'assets/images/$cardName.jpg';
+                    bool isSelected = selectedCards.contains(index);
+                    double cardHeight = isSelected ? 170 : 150;
+                    double cardWidth = isSelected ? 115 : 100;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (selectedCards.contains(index)) {
+                            selectedCards.remove(index);
+                          } else {
+                            selectedCards.add(index);
+                          }
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 150),
+                        margin: EdgeInsets.symmetric(horizontal: 8.0),
+                        height: cardHeight,
+                        width: cardWidth,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.yellow.withOpacity(0.8),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  )
+                                ]
+                              : [],
                         ),
-                      child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.asset(
                             imagePath,
                             fit: BoxFit.fill,
-                            ),
+                          ),
                         ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ),
           ),
-        ]
-      ),
+        ),
+      ]),
     );
-
   }
 
   Widget _buildTimerIndicator() {
@@ -648,11 +659,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
             CircularProgressIndicator(
               value: value,
               backgroundColor: Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                  value > 0.3
-                      ? Colors.green
-                      : (value > 0.1 ? Colors.orange : Colors.red)
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(value > 0.3
+                  ? Colors.green
+                  : (value > 0.1 ? Colors.orange : Colors.red)),
               strokeWidth: 10,
             ),
             Text(
@@ -671,7 +680,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
 
   Widget buildPlayerCard(PlayerJSON player, {bool isCurrentTurn = false}) {
     Color backgroundColor = isCurrentTurn
-        ? Colors.yellowAccent.withOpacity(0.3)  // Highlight for current turn
+        ? Colors.yellowAccent.withOpacity(0.3) // Highlight for current turn
         : (player.active ? Colors.white : Colors.grey[400]!);
 
     return Container(
@@ -682,9 +691,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(10),
-        border: isCurrentTurn
-            ? Border.all(color: Colors.yellow, width: 3)
-            : null,
+        border:
+            isCurrentTurn ? Border.all(color: Colors.yellow, width: 3) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -725,16 +733,21 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
               Text(
                 player.playerUsername,
                 style: TextStyle(
-                  color: isCurrentTurn ? Colors.black : (player.active ? Colors.black : Colors.grey[600]),
+                  color: isCurrentTurn
+                      ? Colors.black
+                      : (player.active ? Colors.black : Colors.grey[600]),
                   fontSize: 18,
-                  fontWeight: isCurrentTurn ? FontWeight.bold : FontWeight.normal,
+                  fontWeight:
+                      isCurrentTurn ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
               SizedBox(height: 4),
               Text(
                 '${player.numCards} cards',
                 style: TextStyle(
-                  color: isCurrentTurn ? Colors.black : (player.active ? Colors.black : Colors.grey[600]),
+                  color: isCurrentTurn
+                      ? Colors.black
+                      : (player.active ? Colors.black : Colors.grey[600]),
                   fontSize: 16,
                 ),
               ),
@@ -831,5 +844,4 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin{
       }).toList(),
     );
   }
-
 }

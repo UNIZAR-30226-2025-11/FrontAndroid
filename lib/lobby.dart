@@ -11,7 +11,8 @@ class WaitingScreen extends StatefulWidget {
   final String lobbyId; // Se necesita el ID del lobby
   final String username;
 
-  WaitingScreen({required this.socket, required this.lobbyId, required this.username});
+  WaitingScreen(
+      {required this.socket, required this.lobbyId, required this.username});
 
   @override
   _StartGameScreenState createState() => _StartGameScreenState();
@@ -46,7 +47,9 @@ class _StartGameScreenState extends State<WaitingScreen> {
           //players = lobbyUpdate.players
           players = (lobbyUpdate.players as List)
               .map((player) => PlayerLobbyJSON.fromJson(player))
-              .where((player) => player.name != username) //FIXME mostrarme como miembro del lobby?
+              .where((player) =>
+                  player.name !=
+                  username) //FIXME mostrarme como miembro del lobby?
               .toList();
         });
       } catch (e) {
@@ -69,8 +72,13 @@ class _StartGameScreenState extends State<WaitingScreen> {
         // Si no hay error, navegar a la pantalla del juego
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => GameScreen(socket:
-          widget.socket,lobbyId: widget.lobbyId,initialGameState: initialGameState ?? {},username: username,)),
+          MaterialPageRoute(
+              builder: (context) => GameScreen(
+                    socket: widget.socket,
+                    lobbyId: widget.lobbyId,
+                    initialGameState: initialGameState ?? {},
+                    username: username,
+                  )),
         );
       } else {
         // Si hay un error, mostrar un mensaje
@@ -83,8 +91,9 @@ class _StartGameScreenState extends State<WaitingScreen> {
 
   @override
   void dispose() {
-    widget.socket.off('update-lobby'); // Detener la escucha cuando se destruye la pantalla
-    widget.socket.off('start-game');  // Detener la escucha del evento start-game
+    widget.socket.off(
+        'update-lobby'); // Detener la escucha cuando se destruye la pantalla
+    widget.socket.off('start-game'); // Detener la escucha del evento start-game
     super.dispose();
   }
 
@@ -100,7 +109,8 @@ class _StartGameScreenState extends State<WaitingScreen> {
           // 🏷️ Muestra el lobby ID en la parte superior
           Text(
             'Lobby ID: ${widget.lobbyId}',
-            style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
           ),
 
           SizedBox(height: 80),

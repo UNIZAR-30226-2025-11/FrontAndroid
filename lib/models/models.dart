@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 // lib/models.dart
@@ -24,7 +22,10 @@ class PlayerJSON {
   final int numCards;
   final bool active;
 
-  PlayerJSON({required this.playerUsername, required this.numCards, required this.active});
+  PlayerJSON(
+      {required this.playerUsername,
+      required this.numCards,
+      required this.active});
 
   factory PlayerJSON.fromJson(Map<String, dynamic> json) {
     return PlayerJSON(
@@ -88,25 +89,23 @@ class BackendStateUpdateJSON {
     required this.timeOut,
     required this.username,
     required this.cardsLeftInDeck,
-
   });
 
   factory BackendStateUpdateJSON.fromJson(Map<String, dynamic> json) {
     return BackendStateUpdateJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg'],
-      lobbyID: json['lobbyID'],
-      playerCards: (json['playerCards'] as List)
-          .map((cards) => CardJSON.fromJson(cards))
-          .toList(),
-      players: (json['players'] as List)
-          .map((player) => PlayerJSON.fromJson(player))
-          .toList(),
-      turnUsername: json['turnUsername'],
-      timeOut: json['timeOut'],
-      username: json['playerUsername'],
-      cardsLeftInDeck: json['cardsLeftInDeck']
-    );
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        lobbyID: json['lobbyID'],
+        playerCards: (json['playerCards'] as List)
+            .map((cards) => CardJSON.fromJson(cards))
+            .toList(),
+        players: (json['players'] as List)
+            .map((player) => PlayerJSON.fromJson(player))
+            .toList(),
+        turnUsername: json['turnUsername'],
+        timeOut: json['timeOut'],
+        username: json['playerUsername'],
+        cardsLeftInDeck: json['cardsLeftInDeck']);
   }
 
   Map<String, dynamic> toJson() {
@@ -164,14 +163,14 @@ class BackendGamePlayedCardsResponseJSON {
   final List<CardJSON> cardsSeeFuture;
   final CardJSON cardReceived;
 
-  BackendGamePlayedCardsResponseJSON({
-    required this.error,
-    required this.errorMsg,
-    required this.cardsSeeFuture,
-    required this.cardReceived
-  });
+  BackendGamePlayedCardsResponseJSON(
+      {required this.error,
+      required this.errorMsg,
+      required this.cardsSeeFuture,
+      required this.cardReceived});
 
-  factory BackendGamePlayedCardsResponseJSON.fromJson(Map<String, dynamic> json) {
+  factory BackendGamePlayedCardsResponseJSON.fromJson(
+      Map<String, dynamic> json) {
     return BackendGamePlayedCardsResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
@@ -209,12 +208,11 @@ class BackendWinnerJSON {
 
   factory BackendWinnerJSON.fromJson(Map<String, dynamic> json) {
     return BackendWinnerJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg'],
-      winnerUsername: json['winnerUsername'],
-      coinsEarned: json['coinsEarned'],
-      lobbyId: json['lobbyId']
-    );
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        winnerUsername: json['winnerUsername'],
+        coinsEarned: json['coinsEarned'],
+        lobbyId: json['lobbyId']);
   }
 
   Map<String, dynamic> toJson() {
@@ -249,8 +247,7 @@ class FrontendWinnerResponseJSON {
         errorMsg: json['errorMsg'],
         winnerUsername: json['winnerUsername'],
         coinsEarned: json['coinsEarned'],
-        lobbyId: json['lobbyId']
-    );
+        lobbyId: json['lobbyId']);
   }
 
   Map<String, dynamic> toJson() {
@@ -279,11 +276,10 @@ class BackendGameSelectPlayerJSON {
 
   factory BackendGameSelectPlayerJSON.fromJson(Map<String, dynamic> json) {
     return BackendGameSelectPlayerJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg'],
-      lobbyId: json['lobbyId'],
-      timeOut: json['timeOut']
-    );
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        lobbyId: json['lobbyId'],
+        timeOut: json['timeOut']);
   }
 
   Map<String, dynamic> toJson() {
@@ -309,7 +305,8 @@ class FrontendGameSelectPlayerResponseJSON {
     required this.lobbyId,
   });
 
-  factory FrontendGameSelectPlayerResponseJSON.fromJson(Map<String, dynamic> json) {
+  factory FrontendGameSelectPlayerResponseJSON.fromJson(
+      Map<String, dynamic> json) {
     return FrontendGameSelectPlayerResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
@@ -373,7 +370,8 @@ class FrontendGameSelectCardResponseJSON {
     required this.lobbyId,
   });
 
-  factory FrontendGameSelectCardResponseJSON.fromJson(Map<String, dynamic> json) {
+  factory FrontendGameSelectCardResponseJSON.fromJson(
+      Map<String, dynamic> json) {
     return FrontendGameSelectCardResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
@@ -437,7 +435,8 @@ class FrontendGameSelectCardTypeResponseJSON {
     required this.lobbyId,
   });
 
-  factory FrontendGameSelectCardTypeResponseJSON.fromJson(Map<String, dynamic> json) {
+  factory FrontendGameSelectCardTypeResponseJSON.fromJson(
+      Map<String, dynamic> json) {
     return FrontendGameSelectCardTypeResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
@@ -471,10 +470,10 @@ class BackendGameSelectNopeJSON {
 
   factory BackendGameSelectNopeJSON.fromJson(Map<String, dynamic> json) {
     return BackendGameSelectNopeJSON(
-        error: json['error'],
-        errorMsg: json['errorMsg'],
-        lobbyId: json['lobbyId'],
-        timeOut: json['timeOut'],
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      lobbyId: json['lobbyId'],
+      timeOut: json['timeOut'],
     );
   }
 
@@ -494,14 +493,15 @@ class FrontendGameSelectNopeResponseJSON {
   final bool useNope;
   final String lobbyId;
 
-  FrontendGameSelectNopeResponseJSON ({
+  FrontendGameSelectNopeResponseJSON({
     required this.error,
     required this.errorMsg,
     required this.useNope,
     required this.lobbyId,
   });
 
-  factory FrontendGameSelectNopeResponseJSON.fromJson(Map<String, dynamic> json) {
+  factory FrontendGameSelectNopeResponseJSON.fromJson(
+      Map<String, dynamic> json) {
     return FrontendGameSelectNopeResponseJSON(
       error: json['error'],
       errorMsg: json['errorMsg'],
@@ -519,7 +519,6 @@ class FrontendGameSelectNopeResponseJSON {
     };
   }
 }
-
 
 class FrontendCreateLobbyJSON {
   final bool error;
@@ -576,7 +575,6 @@ class BackendCreateLobbyResponseJSON {
     };
   }
 }
-
 
 class FrontendJoinLobbyJSON {
   final bool error;
@@ -651,14 +649,13 @@ class BackendLobbyStateUpdateJSON {
 
   factory BackendLobbyStateUpdateJSON.fromJson(Map<String, dynamic> json) {
     return BackendLobbyStateUpdateJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg'],
-      players: (json['players'] as List)
-          .map((players) => PlayerLobbyJSON.fromJson(players))
-          .toList(),
-      disband: json['disband'],
-      lobbyId: json['lobbyId']
-    );
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        players: (json['players'] as List)
+            .map((players) => PlayerLobbyJSON.fromJson(players))
+            .toList(),
+        disband: json['disband'],
+        lobbyId: json['lobbyId']);
   }
 
   Map<String, dynamic> toJson() {
@@ -683,8 +680,8 @@ class PlayerLobbyJSON {
 
   factory PlayerLobbyJSON.fromJson(Map<String, dynamic> json) {
     return PlayerLobbyJSON(
-        name: json['name'],
-        isLeader: json['isLeader'],
+      name: json['name'],
+      isLeader: json['isLeader'],
     );
   }
 
@@ -709,9 +706,9 @@ class FrontendStartLobbyJSON {
 
   factory FrontendStartLobbyJSON.fromJson(Map<String, dynamic> json) {
     return FrontendStartLobbyJSON(
-        error: json['error'],
-        errorMsg: json['errorMsg'],
-        lobbyId: json['lobbyId'],
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      lobbyId: json['lobbyId'],
     );
   }
 
@@ -744,7 +741,7 @@ class BackendStartLobbyResponseJSON {
   }
 
   Map<String, dynamic> toJson() {
-    return{
+    return {
       'error': error,
       'errorMsg': errorMsg,
       'numPlayers': numPlayers,
@@ -763,9 +760,7 @@ class BackendStartGameResponseJSON {
 
   factory BackendStartGameResponseJSON.fromJson(Map<String, dynamic> json) {
     return BackendStartGameResponseJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg']
-    );
+        error: json['error'], errorMsg: json['errorMsg']);
   }
 
   Map<String, dynamic> toJson() {
@@ -775,7 +770,6 @@ class BackendStartGameResponseJSON {
     };
   }
 }
-
 
 class BackendNotifyActionJSON {
   final bool error;
@@ -828,10 +822,10 @@ class BackendPlayerStatusJSON {
 
   factory BackendPlayerStatusJSON.fromJson(Map<String, dynamic> json) {
     return BackendPlayerStatusJSON(
-        error: json['error'],
-        errorMsg: json['errorMsg'],
-        playerUsername: json['playerUsername'],
-        connected: json['connected'],
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      playerUsername: json['playerUsername'],
+      connected: json['connected'],
     );
   }
 
@@ -839,12 +833,11 @@ class BackendPlayerStatusJSON {
     return {
       'error': error,
       'errorMsg': errorMsg,
-      'playerUsername':playerUsername,
+      'playerUsername': playerUsername,
       'connected': connected,
     };
   }
 }
-
 
 class FrontendPostMsgJSON {
   final bool error;
@@ -861,10 +854,10 @@ class FrontendPostMsgJSON {
 
   factory FrontendPostMsgJSON.fromJson(Map<String, dynamic> json) {
     return FrontendPostMsgJSON(
-        error: json['error'],
-        errorMsg: json['errorMsg'],
-        msg: json['msg'],
-        lobbyId: json['lobbyId'],
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      msg: json['msg'],
+      lobbyId: json['lobbyId'],
     );
   }
 
@@ -893,14 +886,13 @@ class BackendGetMessagesJSON {
 
   factory BackendGetMessagesJSON.fromJson(Map<String, dynamic> json) {
     return BackendGetMessagesJSON(
-        error: json['error'],
-        errorMsg: json['errorMsg'],
-        messages: (json['messages'] as List)
-        .map((msgs) => MsgJSON.fromJson(msgs))
-        .toList(),
-        lobbyId: json['lobbyId'],
+      error: json['error'],
+      errorMsg: json['errorMsg'],
+      messages: (json['messages'] as List)
+          .map((msgs) => MsgJSON.fromJson(msgs))
+          .toList(),
+      lobbyId: json['lobbyId'],
     );
-
   }
 
   Map<String, dynamic> toJson() {
@@ -926,9 +918,9 @@ class MsgJSON {
 
   factory MsgJSON.fromJson(Map<String, dynamic> json) {
     return MsgJSON(
-        msg: json['msg'],
-        username: json['username'],
-        date: json['date'],
+      msg: json['msg'],
+      username: json['username'],
+      date: json['date'],
     );
   }
 
@@ -940,5 +932,3 @@ class MsgJSON {
     };
   }
 }
-
-

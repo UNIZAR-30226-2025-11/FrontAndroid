@@ -26,11 +26,8 @@ class _JoinGameState extends State<JoinGameScreen> {
     }
 
     // Enviar solicitud de unión al servidor a través del socket
-    widget.socket.emit('join-lobby', {
-      "error": false,
-      "errorMsg": "",
-      "lobbyId": lobbyId
-    });
+    widget.socket.emit(
+        'join-lobby', {"error": false, "errorMsg": "", "lobbyId": lobbyId});
 
     // Escuchar la respuesta del servidor
     widget.socket.once('join-lobby', (data) {
@@ -38,8 +35,11 @@ class _JoinGameState extends State<JoinGameScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => WaitingScreen(socket: widget.socket, lobbyId: lobbyId,username: widget.username,)
-          ),
+              builder: (context) => WaitingScreen(
+                    socket: widget.socket,
+                    lobbyId: lobbyId,
+                    username: widget.username,
+                  )),
         );
       } else {
         setState(() => errorMessage = data["errorMsg"]);
@@ -61,11 +61,13 @@ class _JoinGameState extends State<JoinGameScreen> {
               children: [
                 Icon(Icons.person, color: Colors.white, size: 30),
                 SizedBox(width: 8),
-                Text('username', style: TextStyle(color: Colors.white, fontSize: 18)),
+                Text('username',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
                 SizedBox(width: 8),
                 Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
                 SizedBox(width: 4),
-                Text('5 coins', style: TextStyle(color: Colors.white, fontSize: 18)),
+                Text('5 coins',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
               ],
             ),
           ),
@@ -107,5 +109,3 @@ class _JoinGameState extends State<JoinGameScreen> {
     );
   }
 }
-
-

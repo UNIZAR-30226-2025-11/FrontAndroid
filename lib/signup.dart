@@ -6,7 +6,6 @@ import 'login.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SignUpScreen extends StatefulWidget {
-
   SignUpScreen();
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -24,8 +23,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   @override
-
-
   void _showSnackBar(String message) {
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
@@ -73,7 +70,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final data = jsonDecode(response.body);
 
     if (response.statusCode != 201) {
-      var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
+      var errorMessage = data.containsKey('message')
+          ? data['message']
+          : "Something went wrong. Try later";
       print(errorMessage);
       _showSnackBar(errorMessage);
       return;

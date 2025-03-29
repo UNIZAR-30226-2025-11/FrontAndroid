@@ -49,8 +49,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Game Statistics', style:
-                                    Theme.of(context).textTheme.headlineMedium),
+            Text('Game Statistics',
+                style: Theme.of(context).textTheme.headlineMedium),
             SizedBox(height: 16),
             SizedBox(
               height: 200,
@@ -58,13 +58,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   barGroups: [
-                    BarChartGroupData(x: 0, barRods: [BarChartRodData(toY:
-                                    gamesWon.toDouble(), color: Colors.green)]),
-                    BarChartGroupData(x: 1, barRods: [BarChartRodData(toY:
-                                    gamesLost.toDouble(), color: Colors.red)]),
+                    BarChartGroupData(x: 0, barRods: [
+                      BarChartRodData(
+                          toY: gamesWon.toDouble(), color: Colors.green)
+                    ]),
+                    BarChartGroupData(x: 1, barRods: [
+                      BarChartRodData(
+                          toY: gamesLost.toDouble(), color: Colors.red)
+                    ]),
                   ],
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+                    leftTitles:
+                        AxisTitles(sideTitles: SideTitles(showTitles: true)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -89,12 +94,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             Text('Games Won: $gamesWon'),
             Text('Games Lost: $gamesLost'),
             SizedBox(height: 16),
-            Text('Last 5 Games:', style: Theme.of(context).textTheme.titleSmall),
+            Text('Last 5 Games:',
+                style: Theme.of(context).textTheme.titleSmall),
             Column(
-              children: lastFiveGames.map((game) => ListTile(
-                leading: Icon(game['result'] == 'Win' ? Icons.check : Icons.close, color: game['result'] == 'Win' ? Colors.green : Colors.red),
-                title: Text('${game['result']}'),
-              )).toList(),
+              children: lastFiveGames
+                  .map((game) => ListTile(
+                        leading: Icon(
+                            game['result'] == 'Win' ? Icons.check : Icons.close,
+                            color: game['result'] == 'Win'
+                                ? Colors.green
+                                : Colors.red),
+                        title: Text('${game['result']}'),
+                      ))
+                  .toList(),
             ),
           ],
         ),

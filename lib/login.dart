@@ -3,6 +3,8 @@ import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -18,16 +20,20 @@ class _LoginScreenState extends State<LoginScreen> {
   // FIXME: probar
   Future<void> checkSession() async {
     String? token = await SessionManager.getSessionData();
-    String? username = await SessionManager.getUsername(); // Esperar el valor del nombre de usuario
+    String? username = await SessionManager
+        .getUsername(); // Esperar el valor del nombre de usuario
 
     if (token != null) {
       // Si hay un token guardado, redirige al usuario
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen(username: username ?? "")), // Pasar el username de forma segura
+        MaterialPageRoute(
+            builder: (context) => MainScreen(
+                username: username ?? "")), // Pasar el username de forma segura
       );
     }
   }
+
   @override
   void initState() {
     super.initState();
@@ -75,9 +81,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     final data = jsonDecode(response.body);
-    if (response.statusCode != 200){
+    if (response.statusCode != 200) {
       // Saca el mensaje de error del cuerpo
-      var errorMessage = data.containsKey('message') ? data['message'] : "Something went wrong. Try later";
+      var errorMessage = data.containsKey('message')
+          ? data['message']
+          : "Something went wrong. Try later";
       print(errorMessage);
       _showSnackBar(errorMessage);
       return;
@@ -92,7 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MainScreen(username: usernameController.text,)), // Placeholder
+      MaterialPageRoute(
+          builder: (context) => MainScreen(
+                username: usernameController.text,
+              )), // Placeholder
     );
   }
 
@@ -115,10 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-          width: MediaQuery
-              .of(context)
-              .size
-              .width * 0.85, // Ajuste de ancho
+          width: MediaQuery.of(context).size.width * 0.85, // Ajuste de ancho
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -165,5 +173,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
 }

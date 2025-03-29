@@ -13,20 +13,19 @@ import 'joinGame.dart';
 class MainScreen extends StatefulWidget {
   //final IO.Socket socket;
   final String username;
-  final IO.Socket socket = IO.io('http://10.0.2.2:8000',
+  final IO.Socket socket = IO.io(
+      'http://10.0.2.2:8000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableForceNew()
           .disableAutoConnect()
-          .build()
-  );
-  MainScreen({required this.username}){
+          .build());
+  MainScreen({required this.username}) {
     socket.connect();
   }
 
   @override
   _MainScreenState createState() => _MainScreenState();
-
 }
 
 class _MainScreenState extends State<MainScreen> {
@@ -64,9 +63,10 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         );
-
       } else {
-        String errorMsg = response != null ? response['errorMsg'] : "Error creating the lobby.";
+        String errorMsg = response != null
+            ? response['errorMsg']
+            : "Error creating the lobby.";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg)),
         );
@@ -93,7 +93,6 @@ class _MainScreenState extends State<MainScreen> {
                     child: ElevatedButton(
                       onPressed: () => _createLobby(2),
                       child: Text("2"),
-
                     ),
                   ),
                   Expanded(
@@ -117,10 +116,10 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-
   // Método para mostrar el Snackbar de confirmación de logout
   void _showLogOutBar() {
-    Navigator.pop(context); // Cierra el drawer de perfil antes de mostrar el Snackbar
+    Navigator.pop(
+        context); // Cierra el drawer de perfil antes de mostrar el Snackbar
 
     var scaffoldMessenger = ScaffoldMessenger.of(context);
     scaffoldMessenger.showSnackBar(
@@ -137,14 +136,16 @@ class _MainScreenState extends State<MainScreen> {
                 scaffoldMessenger.hideCurrentSnackBar();
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()), // Redirige al login
+                  MaterialPageRoute(
+                      builder: (context) => LoginScreen()), // Redirige al login
                 );
               },
               child: Text("YES", style: TextStyle(color: Colors.white)),
             ),
             TextButton(
               onPressed: () {
-                scaffoldMessenger.hideCurrentSnackBar(); // Descartar el Snackbar
+                scaffoldMessenger
+                    .hideCurrentSnackBar(); // Descartar el Snackbar
               },
               child: Text("NO", style: TextStyle(color: Colors.white70)),
             ),
@@ -152,7 +153,8 @@ class _MainScreenState extends State<MainScreen> {
         ),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.redAccent,
-        duration: Duration(days: 365), // Lo mantiene abierto hasta que el usuario interactúe
+        duration: Duration(
+            days: 365), // Lo mantiene abierto hasta que el usuario interactúe
       ),
     );
   }
@@ -180,7 +182,10 @@ class _MainScreenState extends State<MainScreen> {
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => StatisticsScreen(username: username,)),
+                    MaterialPageRoute(
+                        builder: (context) => StatisticsScreen(
+                              username: username,
+                            )),
                   );
                 },
               ),
@@ -191,7 +196,10 @@ class _MainScreenState extends State<MainScreen> {
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => EditProfileScreen(username: username,)),
+                    MaterialPageRoute(
+                        builder: (context) => EditProfileScreen(
+                              username: username,
+                            )),
                   );
                 },
               ),
@@ -226,7 +234,8 @@ class _MainScreenState extends State<MainScreen> {
                 SizedBox(width: 8),
                 Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
                 SizedBox(width: 8),
-                Text('5 coins', style: TextStyle(color: Colors.white, fontSize: 18)),
+                Text('5 coins',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
               ],
             ),
           ),
@@ -237,11 +246,13 @@ class _MainScreenState extends State<MainScreen> {
               children: [
                 SizedBox(width: 8),
                 IconButton(
-                  icon: Icon(Icons.person, size: 30, color: Colors.white), // Botón de perfil
+                  icon: Icon(Icons.person,
+                      size: 30, color: Colors.white), // Botón de perfil
                   onPressed: _openProfileDrawer,
                 ),
                 SizedBox(width: 8),
-                Text(username, style: TextStyle(color: Colors.white, fontSize: 18)),
+                Text(username,
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
               ],
             ),
           ),
@@ -261,7 +272,11 @@ class _MainScreenState extends State<MainScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => JoinGameScreen(socket: socket, username: username,)),
+                      MaterialPageRoute(
+                          builder: (context) => JoinGameScreen(
+                                socket: socket,
+                                username: username,
+                              )),
                     );
                   },
                   child: Text("Join Lobby"),
@@ -271,7 +286,10 @@ class _MainScreenState extends State<MainScreen> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ShopScreen(username: username,)),
+                      MaterialPageRoute(
+                          builder: (context) => ShopScreen(
+                                username: username,
+                              )),
                     );
                   },
                   child: Text("Shop"),

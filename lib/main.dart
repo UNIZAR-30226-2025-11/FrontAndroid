@@ -6,15 +6,10 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 void main() {
   runApp(MyApp());
-
 }
 
 class MyApp extends StatelessWidget {
-
-
-
-  MyApp() {
-  }
+  MyApp() {}
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +21,7 @@ class MyApp extends StatelessWidget {
 }
 
 class HomeScreen extends StatelessWidget {
-
-
   HomeScreen(); // Recibimos el socket
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -67,13 +58,9 @@ class HomeScreen extends StatelessWidget {
               child: Text('Log In'),
             ),
             SizedBox(height: 50),
-
-
           ],
         ),
       ),
     );
   }
 }
-
-
