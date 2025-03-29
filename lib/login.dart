@@ -2,18 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-
-
-import 'SessionManager.dart';
-import 'homePage.dart';
-
 
 class LoginScreen extends StatefulWidget {
-
-  LoginScreen();
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -71,14 +61,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
+    // FIXME: La dirección del backend debería ser una variable global facilmente
+    // modificable
+    const URL = "http://10.0.2.2:8000/login";
+
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/login'),
+      Uri.parse(URL),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,
         "password": passwordController.text,
       }),
-
     );
 
     final data = jsonDecode(response.body);

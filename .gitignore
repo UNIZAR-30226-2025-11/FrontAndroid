@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Do not track unncecesary fronts
+ios/
+windows/
+web/
+macos/
+linux/
+

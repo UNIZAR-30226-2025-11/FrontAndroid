@@ -58,8 +58,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+    // Ver comments en login.dart/login()
+    const URL = "http://10.0.2.2:8000/register";
+
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/register'),
+      Uri.parse(URL),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,
