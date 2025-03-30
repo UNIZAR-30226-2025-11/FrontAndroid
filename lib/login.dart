@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'homePage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_example/SessionManager.dart';
+import 'dart:io';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -67,36 +70,59 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    // FIXME: La dirección del backend debería ser una variable global facilmente
-    // modificable
-    const URL = "http://10.0.2.2:8000/login";
+    const URL = "http://localhost:8000/login";
 
     final response = await http.post(
       Uri.parse(URL),
+
       headers: {"Content-Type": "application/json"},
+
       body: jsonEncode({
         "username": usernameController.text,
         "password": passwordController.text,
       }),
     );
 
+    final headers = response.headers;
     final data = jsonDecode(response.body);
+
     if (response.statusCode != 200) {
-      // Saca el mensaje de error del cuerpo
       var errorMessage = data.containsKey('message')
           ? data['message']
           : "Something went wrong. Try later";
+
       print(errorMessage);
       _showSnackBar(errorMessage);
       return;
     }
 
-    await SessionManager.saveSessionData(data['token']); // FIXME: probar
-    await SessionManager.saveUsername(usernameController.text); // FIXME: probar
+    // Let's get the header
+    Map<String, String> cookies = {};
+    String? setCookieHeader = response.headers['set-cookie'];
 
-    //print("Login successful: ${data['message']}");
+    if (setCookieHeader != null) {
+      setCookieHeader.split(',').forEach((cookie) {
+        var parts = cookie.split(';')[0].split('=');
+        if (parts.length == 2) {
+          cookies[parts[0].trim()] = parts[1].trim();
+        }
+      });
+    }
+
+    if (cookies['access_token'] != null) {
+      await SessionManager.saveSessionData(cookies['access_token']!);
+    }
+
+    final token = await SessionManager.getSessionData();
+
+    final res = await http.get(Uri.parse('http://localhost:8000/users'),
+      headers: {
+        'Cookie': 'access_token=$token',
+      }
+    );
+    print(res.body);
+
     print("Login successful");
-    // Redirigir a otra pantalla si el login es exitoso
 
     Navigator.pushReplacement(
       context,

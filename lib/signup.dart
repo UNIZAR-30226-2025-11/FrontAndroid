@@ -56,7 +56,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     // Ver comments en login.dart/login()
-    const URL = "http://10.0.2.2:8000/register";
+    const URL = "http://localhost:8000/register";
 
     final response = await http.post(
       Uri.parse(URL),

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_example/SessionManager.dart';
 import 'package:flutter_example/editProfile.dart';
 import 'package:flutter_example/lobbyLeader.dart';
 import 'game.dart';
@@ -14,9 +15,12 @@ class MainScreen extends StatefulWidget {
   //final IO.Socket socket;
   final String username;
   final IO.Socket socket = IO.io(
-      'http://10.0.2.2:8000',
+      'http://localhost:8000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
+          .setExtraHeaders({
+        'Cookie': 'access_token=$mytoken',
+      })
           .enableForceNew()
           .disableAutoConnect()
           .build());
