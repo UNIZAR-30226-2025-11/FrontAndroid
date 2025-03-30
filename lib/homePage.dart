@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_example/SessionManager.dart';
 import 'package:flutter_example/editProfile.dart';
@@ -12,25 +12,9 @@ import 'shop.dart';
 import 'joinGame.dart';
 
 class MainScreen extends StatefulWidget {
-  //final IO.Socket socket;
   final String username;
-  // FIXME: Esto no se resuelve al hacer el builder
-  final mytoken = SessionManager.getSessionData();
 
-  final IO.Socket socket = IO.io(
-      'http://10.0.2.2:8000',
-      IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setExtraHeaders({
-          'Cookie': 'access_token=$mytoken'
-      })
-          .enableForceNew()
-          .disableAutoConnect()
-          .build());
-
-  MainScreen({required this.username}) {
-    socket.connect();
-  }
+  MainScreen({required this.username});
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -44,20 +28,63 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     username = widget.username;
-    //socket.connect();
-    //socket = widget.socket; // Asigna el socket correctamente
+
+    _initializeSocket();
+    // Set up socket listeners
+    //_setupSocketListeners();
   }
 
-  // Método para crear una sala de lobby
-  void _createLobby(int maxPlayers) {
-    final lobbyRequest = {
-      'error': false,
-      'errorMsg': '',
-      'maxPlayers': maxPlayers,
-    };
-    socket.emit("create-lobby", [lobbyRequest]);
+  Future<void> _initializeSocket() async {
+    try {
+      // Await the token since it's a Future
+      final String? token = await SessionManager.getSessionData();
 
-// Escuchar la respuesta del servidor
+      if (token == null || token.isEmpty) {
+        print("Warning: Token is null or empty");
+        // Handle missing token - perhaps redirect to login
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen())
+        );
+        return;
+      }
+
+      print("Connecting with token: ${token.substring(0, math.min(10, token.length))}...");
+
+      socket = IO.io(
+          'http://10.0.2.2:8000',
+          IO.OptionBuilder()
+              .setTransports(['websocket'])
+              .setExtraHeaders({
+            'Cookie': 'access_token=$token'
+          })
+              .enableForceNew()
+              .disableAutoConnect()
+              .build());
+
+      // Set up error handling for connection
+      socket.onConnectError((error) {
+        print("Socket connection error: $error");
+        // Handle connection error
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Connection error: Unable to authenticate"))
+        );
+      });
+
+      socket.connect();
+
+      // Set up socket listeners
+      _setupSocketListeners();
+    } catch (e) {
+      print("Error initializing socket: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Authentication error: $e"))
+      );
+    }
+  }
+
+  void _setupSocketListeners() {
+    // Listen for create-lobby response
     socket.on("create-lobby", (dynamic response) {
       if (response != null && response['error'] == false) {
         String lobbyId = response['lobbyId'];
@@ -82,6 +109,23 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    socket.disconnect();
+    socket.dispose();
+    super.dispose();
+  }
+
+  // Método para crear una sala de lobby
+  void _createLobby(int maxPlayers) {
+    final lobbyRequest = {
+      'error': false,
+      'errorMsg': '',
+      'maxPlayers': maxPlayers,
+    };
+    socket.emit("create-lobby", [lobbyRequest]);
+  }
+
   // Método para mostrar el dialogo de selección de jugadores
   Future<int?> _showPlayerSelectionDialog(BuildContext context) async {
     return showDialog<int>(
@@ -99,19 +143,28 @@ class _MainScreenState extends State<MainScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _createLobby(2),
+                      onPressed: () {
+                        Navigator.pop(context, 2);
+                        _createLobby(2);
+                      },
                       child: Text("2"),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _createLobby(3),
+                      onPressed: () {
+                        Navigator.pop(context, 3);
+                        _createLobby(3);
+                      },
                       child: Text("3"),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _createLobby(4),
+                      onPressed: () {
+                        Navigator.pop(context, 4);
+                        _createLobby(4);
+                      },
                       child: Text("4"),
                     ),
                   ),
@@ -192,8 +245,8 @@ class _MainScreenState extends State<MainScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => StatisticsScreen(
-                              username: username,
-                            )),
+                          username: username,
+                        )),
                   );
                 },
               ),
@@ -206,8 +259,8 @@ class _MainScreenState extends State<MainScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => EditProfileScreen(
-                              username: username,
-                            )),
+                          username: username,
+                        )),
                   );
                 },
               ),
@@ -227,10 +280,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      /*appBar: AppBar(
-        title: Text("Main Screen"),
-        automaticallyImplyLeading: false, // Remueve el botón de regreso
-      ),*/
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [
@@ -282,9 +331,9 @@ class _MainScreenState extends State<MainScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => JoinGameScreen(
-                                socket: socket,
-                                username: username,
-                              )),
+                            socket: socket,
+                            username: username,
+                          )),
                     );
                   },
                   child: Text("Join Lobby"),
@@ -296,8 +345,8 @@ class _MainScreenState extends State<MainScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => ShopScreen(
-                                username: username,
-                              )),
+                            username: username,
+                          )),
                     );
                   },
                   child: Text("Shop"),
