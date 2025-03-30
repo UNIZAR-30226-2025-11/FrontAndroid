@@ -14,16 +14,20 @@ import 'joinGame.dart';
 class MainScreen extends StatefulWidget {
   //final IO.Socket socket;
   final String username;
+  // FIXME: Esto no se resuelve al hacer el builder
+  final mytoken = SessionManager.getSessionData();
+
   final IO.Socket socket = IO.io(
-      'http://localhost:8000',
+      'http://10.0.2.2:8000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .setExtraHeaders({
-        'Cookie': 'access_token=$mytoken',
+          'Cookie': 'access_token=$mytoken'
       })
           .enableForceNew()
           .disableAutoConnect()
           .build());
+
   MainScreen({required this.username}) {
     socket.connect();
   }

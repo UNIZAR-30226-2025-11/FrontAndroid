@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    const URL = "http://localhost:8000/login";
+    const URL = "http://10.0.2.2:8000/login";
 
     final response = await http.post(
       Uri.parse(URL),
@@ -115,12 +115,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final token = await SessionManager.getSessionData();
 
-    final res = await http.get(Uri.parse('http://localhost:8000/users'),
-      headers: {
-        'Cookie': 'access_token=$token',
-      }
-    );
-    print(res.body);
+    // Esto es un ejemplo de conexi'on
+    //final res = await http.get(Uri.parse('http://10.0.2.2:8000/users'),
+    //  headers: {
+    //    'Cookie': 'access_token=$token',
+    //  }
+    //);
+    //print(res.body);
 
     print("Login successful");
 
