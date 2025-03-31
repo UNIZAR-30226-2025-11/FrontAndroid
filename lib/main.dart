@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/SessionManager.dart';
 import 'package:flutter_example/homePage.dart';
 import 'login.dart';
 import 'signup.dart';
@@ -9,7 +10,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  MyApp() {}
+  MyApp() {
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +25,10 @@ class MyApp extends StatelessWidget {
 class HomeScreen extends StatelessWidget {
   HomeScreen(); // Recibimos el socket
 
+
   @override
   Widget build(BuildContext context) {
+    // SessionManager.removeSessionData();
     return Scaffold(
       //appBar: AppBar(title: Text('Welcome')),
       backgroundColor: Color(0xFF9D0514),

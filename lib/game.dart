@@ -52,7 +52,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket = widget.socket;
     username = widget.username;
     if (widget.initialGameState.isNotEmpty) {
-      print('A');
       dynamic data = widget.initialGameState;
       setState(() {
         error = data['error'];
@@ -102,13 +101,53 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
     remainingTime = timeOut;
 
+    void showTemporaryMessage(String message) {
+      OverlayEntry overlayEntry = OverlayEntry(
+        builder: (context) => Positioned(
+          top: MediaQuery.of(context).size.height * 0.1,
+          width: MediaQuery.of(context).size.width,
+          child: Material(
+            color: Colors.transparent,
+            child: Center(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      Overlay.of(context).insert(overlayEntry);
+
+      // Eliminar el mensaje después de 2.5 segundos
+      Future.delayed(Duration(milliseconds: 2500), () {
+        overlayEntry.remove();
+      });
+    }
+
+
     void accion(dynamic action) {
       PlayerJSON target = action['targetUser'];
+      String targetName = target.playerUsername;
       PlayerJSON trigger = action['triggerUser'];
+      String triggerName = trigger.playerUsername;
       String act = action['action'];
       switch (act) {
-        // TODO: realizar accion según campo action
+      // TODO: realizar accion según campo action
+
       }
+      showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
     }
 
     socket.on('notify-action', (data) {
@@ -119,12 +158,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
 
     void winner(BackendWinnerJSON winnerData) {
-      // TODO: Implementar la lógica para manejar el evento 'winner'
       if (winnerData.error) {
         print('Error: ${winnerData.errorMsg}');
       } else {
         print(
-            'Jugador ${winnerData.winnerUsername} ha ganado y ha ganado ${winnerData.coinsEarned} coins');
+            'Jugador ${winnerData
+                .winnerUsername} ha ganado y ha ganado ${winnerData
+                .coinsEarned} coins');
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -169,7 +209,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket.on('game-select-player', (data) {
       setState(() {
         BackendGameSelectPlayerJSON selectPlayerData =
-            BackendGameSelectPlayerJSON.fromJson(data);
+        BackendGameSelectPlayerJSON.fromJson(data);
         int timeLeft = selectPlayerData.timeOut;
 
         // Show dialog to select a player
@@ -192,7 +232,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                         onTap: () {
                           // Send selected player back to the server
                           FrontendGameSelectPlayerResponseJSON response =
-                              FrontendGameSelectPlayerResponseJSON(
+                          FrontendGameSelectPlayerResponseJSON(
                             error: false,
                             errorMsg: "",
                             playerUsername: player.playerUsername,
@@ -217,7 +257,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket.on('game-select-card', (data) {
       setState(() {
         BackendGameSelectCardJSON selectCardData =
-            BackendGameSelectCardJSON.fromJson(data);
+        BackendGameSelectCardJSON.fromJson(data);
         int timeLeft = selectCardData.timeOut;
 
         // Show dialog to select a card
@@ -250,7 +290,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                         onTap: () {
                           // Send selected card back to the server
                           FrontendGameSelectCardResponseJSON response =
-                              FrontendGameSelectCardResponseJSON(
+                          FrontendGameSelectCardResponseJSON(
                             error: false,
                             errorMsg: "",
                             card: card,
@@ -304,7 +344,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket.on('game-select-card-type', (data) {
       setState(() {
         BackendGameSelectCardTypeJSON selectCardTypeData =
-            BackendGameSelectCardTypeJSON.fromJson(data);
+        BackendGameSelectCardTypeJSON.fromJson(data);
         int timeLeft = selectCardTypeData.timeOut;
 
         // Show dialog to select a card type
@@ -332,13 +372,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     itemBuilder: (context, index) {
                       CardType cardType = CardType.values[index];
                       String imagePath =
-                          'assets/images/${cardType.toString().split('.').last}.jpg';
+                          'assets/images/${cardType
+                          .toString()
+                          .split('.')
+                          .last}.jpg';
 
                       return GestureDetector(
                         onTap: () {
                           // Send selected card type back to the server
                           FrontendGameSelectCardTypeResponseJSON response =
-                              FrontendGameSelectCardTypeResponseJSON(
+                          FrontendGameSelectCardTypeResponseJSON(
                             error: false,
                             errorMsg: "",
                             cardType: cardType
@@ -388,6 +431,73 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
+            );
+          },
+        );
+      });
+    });
+
+    socket.on('game-select-nope', (data) {
+      setState(() {
+        BackendGameSelectNopeJSON nopeData = BackendGameSelectNopeJSON.fromJson(data);
+        int timeLeft = nopeData.timeOut;
+
+        // Show dialog to ask if player wants to use a Nope card
+        showDialog(
+          context: context,
+          barrierDismissible: false, // Prevent dismissing by tapping outside
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Play Nope Card?'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Do you want to play your Nope card?'),
+                  SizedBox(height: 10),
+                  Text('Time left: $timeLeft seconds',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('No'),
+                  onPressed: () {
+                    FrontendGameSelectNopeResponseJSON response =
+                    FrontendGameSelectNopeResponseJSON(
+                      error: false,
+                      errorMsg: "",
+                      useNope: false,
+                      lobbyId: widget.lobbyId,
+                    );
+                    socket.emit('game-select-nope', response.toJson());
+
+                    // Close the dialog
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.red.shade100,
+                  ),
+                  child: Text('Yes, use Nope!',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    // Send response with useNope = true
+                    FrontendGameSelectNopeResponseJSON response =
+                    FrontendGameSelectNopeResponseJSON(
+                      error: false,
+                      errorMsg: "",
+                      useNope: true,
+                      lobbyId: widget.lobbyId,
+                    );
+                    socket.emit('game-select-nope', response.toJson());
+
+                    // Close the dialog
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
             );
           },
         );

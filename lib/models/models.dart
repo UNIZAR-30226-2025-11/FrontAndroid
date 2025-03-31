@@ -17,6 +17,26 @@ enum CardType {
   BeardCat
 }
 
+enum ActionType {
+  ShuffleDeck,
+  Attack,
+  AttackFailed,
+  CardReceived,
+  BombDefused,
+  BombExploded,
+  DrawCard,
+  SkipTurn,
+  FutureSeen,
+  NopeUsed,
+  FavorAttack,
+  TwoWildCardAttackSuccessful,
+  ThreeWildCardAttackSuccessful,
+  AskingNope,
+  AskingPlayer,
+  AskingCard,
+  AskingCardType,
+}
+
 class PlayerJSON {
   final String playerUsername;
   final int numCards;

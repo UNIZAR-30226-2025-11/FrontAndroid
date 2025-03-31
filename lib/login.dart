@@ -31,8 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) => MainScreen(
-                username: username ?? "")), // Pasar el username de forma segura
+            builder: (context) => MainScreen()), // Pasar el username de forma segura
       );
     }
   }
@@ -111,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (cookies['access_token'] != null) {
       await SessionManager.saveSessionData(cookies['access_token']!);
+      await SessionManager.saveUsername(usernameController.text);
     }
 
     final token = await SessionManager.getSessionData();
@@ -129,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
       context,
       MaterialPageRoute(
           builder: (context) => MainScreen(
-                username: usernameController.text,
+
               )), // Placeholder
     );
   }

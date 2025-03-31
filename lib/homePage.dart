@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_example/SessionManager.dart';
 import 'package:flutter_example/editProfile.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_example/lobbyLeader.dart';
 import 'game.dart';
 import 'statistics.dart';
@@ -12,9 +14,7 @@ import 'shop.dart';
 import 'joinGame.dart';
 
 class MainScreen extends StatefulWidget {
-  final String username;
-
-  MainScreen({required this.username});
+  MainScreen();
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -22,16 +22,66 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late IO.Socket socket;
-  late String username;
+  late Future<String?> _usernameFuture;
+  String username = ""; // Valor predeterminado
+  int coins=-1;
 
   @override
   void initState() {
     super.initState();
-    username = widget.username;
-
+    _usernameFuture = _initializeUsername();
     _initializeSocket();
-    // Set up socket listeners
-    //_setupSocketListeners();
+    _initializeCoins();
+  }
+
+  Future<String?> _initializeUsername() async {
+    try {
+      final String? user = await SessionManager.getUsername();
+      setState(() {
+        username = user ?? ""; // Actualiza el username cuando esté disponible
+
+      });
+      return user;
+    } catch (e) {
+      print("Error initializing username: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Username error: $e"))
+      );
+      return "";
+    }
+  }
+
+  Future<void> _initializeCoins()async{
+    try{
+      final String? token = await SessionManager.getSessionData();
+      final res = await
+      http.get(Uri.parse('http://10.0.2.2:8000/users/:$username'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          }
+
+      );
+      print('$username');
+      final headers = res.headers;
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode != 200) {
+        var errorMessage = data.containsKey('message')
+            ? data['message']
+            : "Something went wrong. Try later";
+
+        print(errorMessage);
+        return;
+
+      }else {
+        coins = data['coins'];
+       }
+    }catch (e) {
+      print("Error initializing coins: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Coins error: $e"))
+      );
+    }
   }
 
   Future<void> _initializeSocket() async {
@@ -268,7 +318,15 @@ class _MainScreenState extends State<MainScreen> {
               ListTile(
                 leading: Icon(Icons.logout),
                 title: Text("Logout"),
-                onTap: _showLogOutBar,
+                onTap:(){ _showLogOutBar;
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                  }
+
               ),
             ],
           ),
@@ -279,83 +337,111 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF9D0514),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 48,
-            right: 30,
-            child: Row(
+    return FutureBuilder<String?>(
+      future: _usernameFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Text("Error: ${snapshot.error}"),
+            ),
+          );
+        } else {
+          // Si el username está vacío y no hay error, probablemente falló la inicialización
+          if (username.isEmpty && !snapshot.hasError) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            });
+          }
+
+          return Scaffold(
+            backgroundColor: Color(0xFF9D0514),
+            body: Stack(
               children: [
-                SizedBox(width: 8),
-                Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                SizedBox(width: 8),
-                Text('5 coins',
-                    style: TextStyle(color: Colors.white, fontSize: 18)),
+                Positioned(
+                  top: 48,
+                  right: 30,
+                  child: Row(
+                    children: [
+                      SizedBox(width: 8),
+                      Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+                      SizedBox(width: 8),
+                      Text('$coins',
+                          style: TextStyle(color: Colors.white, fontSize: 18)),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  left: 30,
+                  child: Row(
+                    children: [
+                      SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(Icons.person,
+                            size: 30, color: Colors.white), // Botón de perfil
+                        onPressed: _openProfileDrawer,
+                      ),
+                      SizedBox(width: 8),
+                      Text(username,
+                          style: TextStyle(color: Colors.white, fontSize: 18)),
+                    ],
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Se ejecuta cuando se crea una nueva sala
+                          int? players = await _showPlayerSelectionDialog(context);
+                        },
+                        child: Text("New Lobby"),
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => JoinGameScreen(
+                                  socket: socket,
+                                )),
+                          );
+                        },
+                        child: Text("Join Lobby"),
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ShopScreen(
+                                  username: username,
+                                )),
+                          );
+                        },
+                        child: Text("Shop"),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-          Positioned(
-            top: 40,
-            left: 30,
-            child: Row(
-              children: [
-                SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.person,
-                      size: 30, color: Colors.white), // Botón de perfil
-                  onPressed: _openProfileDrawer,
-                ),
-                SizedBox(width: 8),
-                Text(username,
-                    style: TextStyle(color: Colors.white, fontSize: 18)),
-              ],
-            ),
-          ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () async {
-                    // Se ejecuta cuando se crea una nueva sala
-                    int? players = await _showPlayerSelectionDialog(context);
-                  },
-                  child: Text("New Lobby"),
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => JoinGameScreen(
-                            socket: socket,
-                            username: username,
-                          )),
-                    );
-                  },
-                  child: Text("Join Lobby"),
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ShopScreen(
-                            username: username,
-                          )),
-                    );
-                  },
-                  child: Text("Shop"),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+          );
+        }
+      },
     );
   }
 }

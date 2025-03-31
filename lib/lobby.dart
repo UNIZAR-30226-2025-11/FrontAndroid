@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_example/game.dart';
 
+import 'SessionManager.dart';
+import 'homePage.dart';
 import 'models/models.dart'; // Importa la pantalla de juego
+import 'package:http/http.dart' as http;
 
 class WaitingScreen extends StatefulWidget {
   final IO.Socket socket;
   final String lobbyId; // Se necesita el ID del lobby
-  final String username;
 
   WaitingScreen(
-      {required this.socket, required this.lobbyId, required this.username});
+      {required this.socket, required this.lobbyId});
 
   @override
   _StartGameScreenState createState() => _StartGameScreenState();
@@ -23,12 +25,14 @@ class _StartGameScreenState extends State<WaitingScreen> {
   List<PlayerLobbyJSON> players = []; // Lista de jugadores en el lobby
   Map<String, dynamic>? initialGameState;
 
-  late String username;
+  late Future<String?> _usernameFuture;
+  String username = ""; // Valor predeterminado
+  int coins=-1;
 
   @override
   void initState() {
     super.initState();
-    username = widget.username;
+
     // Escuchar actualizaciones del lobby
     widget.socket.on('update-lobby', (data) {
       try {
@@ -47,9 +51,6 @@ class _StartGameScreenState extends State<WaitingScreen> {
           //players = lobbyUpdate.players
           players = (lobbyUpdate.players as List)
               .map((player) => PlayerLobbyJSON.fromJson(player))
-              .where((player) =>
-                  player.name !=
-                  username) //FIXME mostrarme como miembro del lobby?
               .toList();
         });
       } catch (e) {
@@ -87,6 +88,57 @@ class _StartGameScreenState extends State<WaitingScreen> {
         });
       }
     });
+    _usernameFuture = _initializeUsername();
+    _initializeCoins();
+  }
+
+  Future<String?> _initializeUsername() async {
+    try {
+      final String? user = await SessionManager.getUsername();
+      setState(() {
+        username = user ?? ""; // Actualiza el username cuando esté disponible
+
+      });
+      return user;
+    } catch (e) {
+      print("Error initializing username: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Username error: $e"))
+      );
+      return "";
+    }
+  }
+
+  Future<void> _initializeCoins()async{
+    try{
+      final String? token = await SessionManager.getSessionData();
+      final res = await
+      http.get(Uri.parse('http://10.0.2.2:8000/users/:$username'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          }
+
+      );
+      final headers = res.headers;
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode != 200) {
+        var errorMessage = data.containsKey('message')
+            ? data['message']
+            : "Something went wrong. Try later";
+
+        print(errorMessage);
+        return;
+
+      }else {
+        coins = data['coins'];
+      }
+    }catch (e) {
+      print("Error initializing coins: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Coins error: $e"))
+      );
+    }
   }
 
   @override
@@ -95,6 +147,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
         'update-lobby'); // Detener la escucha cuando se destruye la pantalla
     widget.socket.off('start-game'); // Detener la escucha del evento start-game
     super.dispose();
+
   }
 
   @override
@@ -149,6 +202,34 @@ class _StartGameScreenState extends State<WaitingScreen> {
             ),
 
           SizedBox(height: 20),
+
+          ElevatedButton(
+            onPressed: () {
+              /*widget.socket.emit('leave-lobby', {
+                'lobbyId': widget.lobbyId,
+                'username': username,
+              });*/
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => MainScreen(),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Color(0xFF9D0514),
+              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+            ),
+            child: Text(
+              'Leave Lobby',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          SizedBox(height: 40),
         ],
       ),
     );

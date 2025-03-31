@@ -44,9 +44,6 @@ class _StartGameScreenState extends State<StartGameScreen> {
           //players = lobbyUpdate.players
           players = (lobbyUpdate.players as List)
               .map((player) => PlayerLobbyJSON.fromJson(player))
-              .where((player) =>
-                  player.name !=
-                  username) //FIXME mostrarme como miembro del lobby?
               .toList();
         });
       } catch (e) {

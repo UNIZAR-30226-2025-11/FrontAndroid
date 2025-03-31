@@ -4,11 +4,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import 'SessionManager.dart';
+
 class JoinGameScreen extends StatefulWidget {
   final IO.Socket socket;
-  final String username;
 
-  JoinGameScreen({required this.socket, required this.username});
+  JoinGameScreen({required this.socket});
 
   @override
   _JoinGameState createState() => _JoinGameState();
@@ -17,6 +18,17 @@ class JoinGameScreen extends StatefulWidget {
 class _JoinGameState extends State<JoinGameScreen> {
   final TextEditingController roomCodeController = TextEditingController();
   String? errorMessage;
+
+  late Future<String?> _usernameFuture;
+  String username = ""; // Valor predeterminado
+  int coins=-1;
+
+  @override
+  void initState() {
+    super.initState();
+    _usernameFuture = _initializeUsername();
+    _initializeCoins();
+  }
 
   void joinGame() {
     String lobbyId = roomCodeController.text.trim();
@@ -38,7 +50,6 @@ class _JoinGameState extends State<JoinGameScreen> {
               builder: (context) => WaitingScreen(
                     socket: widget.socket,
                     lobbyId: lobbyId,
-                    username: widget.username,
                   )),
         );
       } else {
@@ -46,6 +57,58 @@ class _JoinGameState extends State<JoinGameScreen> {
       }
     });
   }
+
+  Future<String?> _initializeUsername() async {
+    try {
+      final String? user = await SessionManager.getUsername();
+      setState(() {
+        username = user ?? ""; // Actualiza el username cuando esté disponible
+        print('Username actuizalizado'+username);
+
+      });
+      return user;
+    } catch (e) {
+      print("Error initializing username: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Username error: $e"))
+      );
+      return "";
+    }
+  }
+
+  Future<void> _initializeCoins()async{
+    try{
+      final String? token = await SessionManager.getSessionData();
+      final res = await
+      http.get(Uri.parse('http://10.0.2.2:8000/users/:$username'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          }
+
+      );
+      print('$username');
+      final headers = res.headers;
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode != 200) {
+        var errorMessage = data.containsKey('message')
+            ? data['message']
+            : "Something went wrong. Try later";
+
+        print(errorMessage);
+        return;
+
+      }else {
+        coins = data['coins'];
+      }
+    }catch (e) {
+      print("Error initializing coins: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Coins error: $e"))
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -55,18 +118,28 @@ class _JoinGameState extends State<JoinGameScreen> {
       body: Stack(
         children: [
           Positioned(
-            top: 10,
-            right: 10,
+            top: 48,
+            right: 30,
             child: Row(
               children: [
-                Icon(Icons.person, color: Colors.white, size: 30),
-                SizedBox(width: 8),
-                Text('username',
-                    style: TextStyle(color: Colors.white, fontSize: 18)),
                 SizedBox(width: 8),
                 Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                SizedBox(width: 4),
-                Text('5 coins',
+                SizedBox(width: 8),
+                Text('$coins',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 30,
+            child: Row(
+              children: [
+                SizedBox(width: 8),
+                Icon(Icons.person,size: 30, color: Colors.white), // Botón de perfil
+                  //onPressed: _openProfileDrawer,
+                SizedBox(width: 8),
+                Text(username,
                     style: TextStyle(color: Colors.white, fontSize: 18)),
               ],
             ),
