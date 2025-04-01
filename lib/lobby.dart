@@ -178,6 +178,33 @@ class _StartGameScreenState extends State<WaitingScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Positioned(
+            top: 48,
+            right: 30,
+            child: Row(
+              children: [
+                SizedBox(width: 8),
+                Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+                SizedBox(width: 8),
+                Text('$coins',
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 40,
+            left: 30,
+            child: Row(
+              children: [
+                SizedBox(width: 8),
+                Icon(Icons.person,
+                      size: 30, color: Colors.white), // Botón de perfil
+                SizedBox(width: 8),
+                Text(username,
+                    style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
+            ),
+          ),
           SizedBox(height: 200),
 
           // 🏷️ Muestra el lobby ID en la parte superior
