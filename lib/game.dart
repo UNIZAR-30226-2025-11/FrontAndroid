@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import 'SessionManager.dart';
+import 'homePage.dart';
 import 'models/models.dart';
 
 class GameScreen extends StatefulWidget {
   final IO.Socket socket;
   final String lobbyId;
   final String username;
-  final int coins = 3;
   final Map<String, dynamic> initialGameState;
 
   GameScreen(
@@ -34,11 +35,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   int timeOut = 0;
   String turnUsername = "";
   int cardsLeftInDeck = 0;
+  late int coins=-1;
 
   final ScrollController _scrollController = ScrollController();
   List<int> selectedCards = [];
   int remainingTime = 60;
-  late Timer timer;
+  //late Timer timer;
   late String username;
 
   List<Map<String, dynamic>> animatingCards = [];
@@ -58,15 +60,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         errorMsg = data['errorMsg'];
         print(data['playerCards']);
         //playerCards = List<String>.from(data['playerCards']);
-        playerCards = List<CardJSON>.from(jsonDecode(data['playerCards']));
+        // If playerCards is already a List (not a JSON string)
+        playerCards = (data['playerCards'] as List)
+            .map((card) => CardJSON.fromJson(card as Map<String, dynamic>))
+            .toList();
         print(data['playerCards']); // Para ver qué tipo de dato es
         players = (data['players'] as List)
             .map((player) => PlayerJSON.fromJson(player))
             .where((player) =>
                 player.playerUsername !=
-                username) //FIXME cambiar id por username?
+                username)
             .toList();
-        turn = data['turn'];
         timeOut = data['timeOut'];
         remainingTime = timeOut;
         turnUsername = data['turnUsername'];
@@ -75,22 +79,93 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       print('fin');
     }
     setupSocketListeners();
-    startTimer();
+    _initializeUsername();
+    _initializeCoins();
+    //startTimer();
+  }
+
+  Future<String?> _initializeUsername() async {
+    try {
+      final String? user = await SessionManager.getUsername();
+      setState(() {
+        username = user ?? ""; // Actualiza el username cuando esté disponible
+
+      });
+      return user;
+    } catch (e) {
+      print("Error initializing username: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Username error: $e"))
+      );
+      return "";
+    }
+  }
+
+  Future<void> _initializeCoins() async {
+    try {
+      final String? token = await SessionManager.getSessionData();
+      final res = await http.get(
+          Uri.parse('http://10.0.2.2:8000/users'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          }
+      );
+
+      print('Current username: $username');
+      final data = jsonDecode(res.body);
+
+      if (res.statusCode != 200) {
+        var errorMessage = data.containsKey('message')
+            ? data['message']
+            : "Something went wrong. Try later";
+
+        print(errorMessage);
+        return;
+      } else {
+        // Find the user with matching username
+        final user = (data as List).firstWhere(
+              (user) => user['username'] == username,
+          orElse: () => null,
+        );
+
+        if (user != null) {
+          // Use setState to update the UI
+          setState(() {
+            coins = int.parse(user['coins'].toString());
+          });
+          print("Found user, coins: $coins");
+        } else {
+          print("User not found in the response data");
+        }
+      }
+    } catch (e) {
+      print("Error initializing coins: $e");
+      if (mounted) {  // Check if widget is still mounted
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Coins error: $e"))
+        );
+      }
+    }
   }
 
   void setupSocketListeners() {
+    socket.off('game-state');
     socket.on('game-state', (data) {
+      print('before mounted');
       if (mounted) {
         // Add this check
+        print('Nuevo estado recibido');
         setState(() {
           error = data['error'];
           errorMsg = data['errorMsg'];
-          playerCards = List<CardJSON>.from(jsonDecode(data['playerCards']));
+          // If playerCards is already a List (not a JSON string)
+          playerCards = (data['playerCards'] as List)
+              .map((card) => CardJSON.fromJson(card as Map<String, dynamic>))
+              .toList();
           players = (data['players'] as List)
               .map((player) => PlayerJSON.fromJson(player))
               .where((player) => player.playerUsername != username)
               .toList();
-          turn = data['turn'];
           timeOut = data['timeOut'];
           remainingTime = timeOut;
           turnUsername = data['turnUsername'];
@@ -138,10 +213,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
 
     void accion(dynamic action) {
-      PlayerJSON target = action['targetUser'];
-      String targetName = target.playerUsername;
-      PlayerJSON trigger = action['triggerUser'];
-      String triggerName = trigger.playerUsername;
+      String targetName = action['targetUser'];
+      String triggerName = action['triggerUser'];
       String act = action['action'];
       switch (act) {
       // TODO: realizar accion según campo action
@@ -175,21 +248,28 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   children: [
                     TextSpan(
                       text: '${winnerData.winnerUsername} ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.bold,color: Colors.green),
                     ),
                     TextSpan(text: 'has won '),
                     TextSpan(
-                      text: '${winnerData.coinsEarned} coins',
-                      style: TextStyle(color: Colors.green),
+                      text: 'and you have won ${winnerData.coinsEarned} coins',
+                      //style: TextStyle(color: Colors.green),
                     ),
                   ],
                 ),
               ),
               actions: <Widget>[
                 TextButton(
-                  child: Text('Cerrar'),
+                  child: Text('Close'),
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    //Navigator.of(context).pop();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => MainScreen(
+
+                          )), // Placeholder
+                    );
                   },
                 ),
               ],
@@ -541,13 +621,18 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       } else {
         setState(() {
           print("Actualizando estado");
-          //TODO: METER NUEVA CARTA SI HA ROBADO
+          if (response.cardsSeeFuture != null){
+            //TODO: mostrar cartas
+          }
+          if(response.cardReceived != null){
+            //TODO: animacion mostrar carta?
+          }
         });
       }
     });
   }
 
-  void startTimer() {
+  /*void startTimer() {
     timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (mounted) {
         if (remainingTime > 0) {
@@ -561,7 +646,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         }
       }
     });
-  }
+  }*/
 
   @override
   void dispose() {
@@ -575,7 +660,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket.off('game-played-cards');
 
     // Cancel timers
-    timer.cancel();
+    //timer.cancel();
 
     // Dispose animation controllers
     for (var card in animatingCards) {
@@ -602,7 +687,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               SizedBox(width: 8),
               Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
               SizedBox(width: 8),
-              Text('5 coins',
+              Text('$coins',
                   style: TextStyle(color: Colors.white, fontSize: 18)),
             ],
           ),
@@ -630,7 +715,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         // Only display other players, not the current player
         if (players.isNotEmpty)
           Positioned(
-            top: 50,
+            top: 100,
             left: MediaQuery.of(context).size.width / 2 - 60,
             child: buildPlayerCard(players[0],
                 isCurrentTurn: players[0].playerUsername == turnUsername),
@@ -666,7 +751,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         ),
         Positioned(
           bottom: 210,
-          left: MediaQuery.of(context).size.width / 2 - 150,
+          left: MediaQuery.of(context).size.width / 2 - 165,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -679,7 +764,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     : null,
                 child: Text('Play Cards'),
               ),
-              SizedBox(width: 60),
+              SizedBox(width: 90),
               ElevatedButton(
                 onPressed: () {
                   // Acción de robar carta
@@ -760,9 +845,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   Widget _buildTimerIndicator() {
     return TweenAnimationBuilder(
-      duration: Duration(seconds: timeOut),
+      duration: Duration(milliseconds: timeOut),
       tween: Tween<double>(begin: 1.0, end: 0.0),
       builder: (context, value, child) {
+        // Calculate remaining time from the animation value
+        int displayTime = (timeOut * value / 1000).ceil();
+
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -775,11 +863,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               strokeWidth: 10,
             ),
             Text(
-              '$remainingTime',
+              '$displayTime',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: remainingTime <= 10 ? Colors.red : Colors.black,
+                color: displayTime <= 10 ? Colors.red : Colors.black,
               ),
             ),
           ],
@@ -797,7 +885,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       margin: EdgeInsets.all(8.0),
       padding: EdgeInsets.all(16.0),
       height: 150,
-      width: 160,
+      width: 180,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(10),

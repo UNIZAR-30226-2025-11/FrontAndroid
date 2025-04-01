@@ -27,24 +27,16 @@ class _StartGameScreenState extends State<StartGameScreen> {
     super.initState();
     username = widget.username;
     // Escuchar actualizaciones del lobby
-    widget.socket.on('update-lobby', (data) {
+    widget.socket.on('lobby-state', (data) {
       try {
         final lobbyUpdate = BackendLobbyStateUpdateJSON.fromJson(data);
-        if (lobbyUpdate.error) {
-          print('Lobby update error: ${lobbyUpdate.errorMsg}');
-          return;
-        }
-
-        if (lobbyUpdate.disband) {
-          print('Disband');
-          return;
-        }
-
         setState(() {
-          //players = lobbyUpdate.players
-          players = (lobbyUpdate.players as List)
-              .map((player) => PlayerLobbyJSON.fromJson(player))
-              .toList();
+          try {
+            // Check if the players are already PlayerLobbyJSON objects
+            players = lobbyUpdate.players;
+                    } catch (e) {
+            print('Error converting players: $e');
+          }
         });
       } catch (e) {
         // Handle JSON parsing errors
@@ -56,7 +48,13 @@ class _StartGameScreenState extends State<StartGameScreen> {
   @override
   void dispose() {
     widget.socket.off(
-        'lobby-updated'); // Detener la escucha cuando se destruye la pantalla
+        'lobby-state'); // Detener la escucha cuando se destruye la pantalla
+    //widget.socket.off('game-state');
+    widget.socket.off('game-state', (data) {
+      setState(() {
+        initialGameState = data;
+      });
+    });
     super.dispose();
   }
 
@@ -101,7 +99,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
 
     widget.socket.on('start-game', (data) {
       // Respuesta del servidor a start-game
-      if (data['error'] == false) {
+      if (data['error'] == false) {;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

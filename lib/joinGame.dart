@@ -63,7 +63,6 @@ class _JoinGameState extends State<JoinGameScreen> {
       final String? user = await SessionManager.getUsername();
       setState(() {
         username = user ?? ""; // Actualiza el username cuando esté disponible
-        print('Username actuizalizado'+username);
 
       });
       return user;
@@ -76,18 +75,17 @@ class _JoinGameState extends State<JoinGameScreen> {
     }
   }
 
-  Future<void> _initializeCoins()async{
-    try{
+  Future<void> _initializeCoins() async {
+    try {
       final String? token = await SessionManager.getSessionData();
-      final res = await
-      http.get(Uri.parse('http://10.0.2.2:8000/users/:$username'),
+      final res = await http.get(
+          Uri.parse('http://10.0.2.2:8000/users'),
           headers: {
             'Cookie': 'access_token=$token',
           }
-
       );
-      print('$username');
-      final headers = res.headers;
+
+      print('Current username: $username');
       final data = jsonDecode(res.body);
 
       if (res.statusCode != 200) {
@@ -97,15 +95,30 @@ class _JoinGameState extends State<JoinGameScreen> {
 
         print(errorMessage);
         return;
+      } else {
+        // Find the user with matching username
+        final user = (data as List).firstWhere(
+              (user) => user['username'] == username,
+          orElse: () => null,
+        );
 
-      }else {
-        coins = data['coins'];
+        if (user != null) {
+          // Use setState to update the UI
+          setState(() {
+            coins = int.parse(user['coins'].toString());
+          });
+          print("Found user, coins: $coins");
+        } else {
+          print("User not found in the response data");
+        }
       }
-    }catch (e) {
+    } catch (e) {
       print("Error initializing coins: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Coins error: $e"))
-      );
+      if (mounted) {  // Check if widget is still mounted
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Coins error: $e"))
+        );
+      }
     }
   }
 

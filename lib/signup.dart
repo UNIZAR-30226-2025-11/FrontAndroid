@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/SessionManager.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'homePage.dart';
@@ -20,6 +21,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
+    SessionManager.removeSessionData();
   }
 
   @override

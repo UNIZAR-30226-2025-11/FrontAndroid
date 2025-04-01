@@ -34,7 +34,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
     super.initState();
 
     // Escuchar actualizaciones del lobby
-    widget.socket.on('update-lobby', (data) {
+    widget.socket.on('lobby-state', (data) {
       try {
         final lobbyUpdate = BackendLobbyStateUpdateJSON.fromJson(data);
         if (lobbyUpdate.error) {
@@ -109,17 +109,17 @@ class _StartGameScreenState extends State<WaitingScreen> {
     }
   }
 
-  Future<void> _initializeCoins()async{
-    try{
+  Future<void> _initializeCoins() async {
+    try {
       final String? token = await SessionManager.getSessionData();
-      final res = await
-      http.get(Uri.parse('http://10.0.2.2:8000/users/:$username'),
+      final res = await http.get(
+          Uri.parse('http://10.0.2.2:8000/users'),
           headers: {
             'Cookie': 'access_token=$token',
           }
-
       );
-      final headers = res.headers;
+
+      print('Current username: $username');
       final data = jsonDecode(res.body);
 
       if (res.statusCode != 200) {
@@ -129,23 +129,44 @@ class _StartGameScreenState extends State<WaitingScreen> {
 
         print(errorMessage);
         return;
+      } else {
+        // Find the user with matching username
+        final user = (data as List).firstWhere(
+              (user) => user['username'] == username,
+          orElse: () => null,
+        );
 
-      }else {
-        coins = data['coins'];
+        if (user != null) {
+          // Use setState to update the UI
+          setState(() {
+            coins = int.parse(user['coins'].toString());
+          });
+          print("Found user, coins: $coins");
+        } else {
+          print("User not found in the response data");
+        }
       }
-    }catch (e) {
+    } catch (e) {
       print("Error initializing coins: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Coins error: $e"))
-      );
+      if (mounted) {  // Check if widget is still mounted
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Coins error: $e"))
+        );
+      }
     }
   }
 
   @override
   void dispose() {
     widget.socket.off(
-        'update-lobby'); // Detener la escucha cuando se destruye la pantalla
+        'lobby-state'); // Detener la escucha cuando se destruye la pantalla
     widget.socket.off('start-game'); // Detener la escucha del evento start-game
+    //widget.socket.off('game-state');
+    widget.socket.off('game-state', (data) {
+      setState(() {
+        initialGameState = data;
+      });
+    });
     super.dispose();
 
   }

@@ -180,8 +180,8 @@ class FrontendGamePlayedCardsJSON {
 class BackendGamePlayedCardsResponseJSON {
   final bool error;
   final String errorMsg;
-  final List<CardJSON> cardsSeeFuture;
-  final CardJSON cardReceived;
+  final List<CardJSON>? cardsSeeFuture;
+  final CardJSON? cardReceived;
 
   BackendGamePlayedCardsResponseJSON(
       {required this.error,
@@ -192,12 +192,16 @@ class BackendGamePlayedCardsResponseJSON {
   factory BackendGamePlayedCardsResponseJSON.fromJson(
       Map<String, dynamic> json) {
     return BackendGamePlayedCardsResponseJSON(
-      error: json['error'],
-      errorMsg: json['errorMsg'],
-      cardsSeeFuture: (json['cardsSeeFuture'] as List)
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      cardsSeeFuture: json['cardsSeeFuture'] != null
+          ? (json['cardsSeeFuture'] as List)
           .map((cards) => CardJSON.fromJson(cards))
-          .toList(),
-      cardReceived: json['cardsReceived'],
+          .toList()
+          : null,
+      cardReceived: json['cardsReceived'] != null
+          ? CardJSON.fromJson(json['cardsReceived'])
+          : null,
     );
   }
 
