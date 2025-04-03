@@ -287,6 +287,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
 
     socket.on('game-select-player', (data) {
+      print('select-game recibido');
       setState(() {
         BackendGameSelectPlayerJSON selectPlayerData =
         BackendGameSelectPlayerJSON.fromJson(data);
@@ -583,6 +584,32 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         );
       });
     });
+    socket.on('game-played-cards', (data) {
+      print("respuesta a cartas recibida");
+      BackendGamePlayedCardsResponseJSON response =
+      BackendGamePlayedCardsResponseJSON.fromJson(data);
+
+      if (response.error) {
+        setState(() {
+          error = true;
+          errorMsg = response.errorMsg;
+          print(errorMsg);
+        });
+      } else {
+        setState(() {
+          print("Actualizando estado");
+          if (response.cardsSeeFuture != null){
+            //TODO: mostrar cartas
+          }
+          if(response.cardReceived != null){
+            //TODO: animacion mostrar carta?
+          }
+          timeOut = 0;
+          _buildTimerIndicator();
+          selectedCards.clear();
+        });
+      }
+    });
   }
 
   void sendGameAction(List<int> selectedCardIndices) {
@@ -607,29 +634,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
     print("cartas enviadas");
 
-    socket.on('game-played-cards', (data) {
-      print("respuesta a cartas recibida");
-      BackendGamePlayedCardsResponseJSON response =
-          BackendGamePlayedCardsResponseJSON.fromJson(data);
-
-      if (response.error) {
-        setState(() {
-          error = true;
-          errorMsg = response.errorMsg;
-          print(errorMsg);
-        });
-      } else {
-        setState(() {
-          print("Actualizando estado");
-          if (response.cardsSeeFuture != null){
-            //TODO: mostrar cartas
-          }
-          if(response.cardReceived != null){
-            //TODO: animacion mostrar carta?
-          }
-        });
-      }
-    });
   }
 
   /*void startTimer() {
@@ -961,48 +965,55 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
     setState(() {
       isAnimating = true;
+      animatingCards.clear(); // Clear previous animations
 
-      // Create a copy of the selected cards for animation
-      animatingCards = selectedCards.map((index) {
-        return {
-          'cardName': playerCards[index],
-          'controller': AnimationController(
-            duration: Duration(milliseconds: 800),
-            vsync: this,
+      // Calculate the starting position (position of the card in the hand)
+      final double startX = MediaQuery.of(context).size.width / 2 - 150;
+      final double startY = MediaQuery.of(context).size.height - 100;
+
+      // Create animation data for each selected card
+      animatingCards = selectedCards.asMap().entries.map((entry) {
+        final index = entry.key;
+        final cardIndex = entry.value;
+
+        final controller = AnimationController(
+          duration: const Duration(milliseconds: 800),
+          vsync: this,
+        );
+
+        final position = Tween<Offset>(
+          begin: Offset(startX + (index * 116), 0), // Starting from card position
+          end: Offset(
+            MediaQuery.of(context).size.width / 2 - 50, // Center of screen
+            MediaQuery.of(context).size.height * 0.3,   // Target Y position
           ),
-          'position': Tween<Offset>(
-            begin: Offset(0, 0),
-            end: Offset(
-              (MediaQuery.of(context).size.width / 2) -
-                  (MediaQuery.of(context).size.width / 2 - 150 + index * 116),
-              (MediaQuery.of(context).size.height * 0.3) -
-                  (MediaQuery.of(context).size.height - 100),
-            ),
-          ).animate(CurvedAnimation(
-            parent: AnimationController(
-              duration: Duration(milliseconds: 800),
-              vsync: this,
-            )..forward(),
-            curve: Curves.easeOutQuad,
-          )),
+        ).animate(CurvedAnimation(
+          parent: controller,
+          curve: Curves.easeOut,
+        ));
+
+        return {
+          'card': playerCards[cardIndex],
+          'controller': controller,
+          'position': position,
         };
       }).toList();
     });
 
-    // Start animation
-    Future.delayed(Duration(milliseconds: 50), () {
-      for (var card in animatingCards) {
-        (card['controller'] as AnimationController).forward();
-      }
-    });
+    // Start all animations
+    for (final card in animatingCards) {
+      (card['controller'] as AnimationController).forward();
+    }
 
-    // After animation completes, send the game action
-    Future.delayed(Duration(milliseconds: 1000), () {
+    // When animation completes, send the action and clean up
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (!mounted) return;
+
+      sendGameAction(selectedCards);
       setState(() {
         isAnimating = false;
-        animatingCards = [];
+        animatingCards.clear();
       });
-      sendGameAction(selectedCards);
     });
   }
 
