@@ -156,6 +156,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         // Add this check
         print('Nuevo estado recibido');
         setState(() {
+          print(data);
           error = data['error'];
           errorMsg = data['errorMsg'];
           // If playerCards is already a List (not a JSON string)
