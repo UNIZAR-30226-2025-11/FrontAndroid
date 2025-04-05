@@ -337,6 +337,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
 
     socket.on('game-select-card', (data) {
+      print('select card revibido');
       setState(() {
         BackendGameSelectCardJSON selectCardData =
         BackendGameSelectCardJSON.fromJson(data);
@@ -424,6 +425,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
 
     socket.on('game-select-card-type', (data) {
+      print('select card type recibido');
       setState(() {
         BackendGameSelectCardTypeJSON selectCardTypeData =
         BackendGameSelectCardTypeJSON.fromJson(data);

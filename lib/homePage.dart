@@ -2,16 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_example/SessionManager.dart';
-import 'package:flutter_example/editProfile.dart';
+import 'package:flutter_example/shop.dart' as shop;
 import 'package:http/http.dart' as http;
 import 'package:flutter_example/lobbyLeader.dart';
+import 'package:flutter_example/statistics.dart';
+import 'SessionManager.dart';
+import 'editProfile.dart';
 import 'game.dart';
-import 'statistics.dart';
-import 'login.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'shop.dart';
 import 'joinGame.dart';
+import 'login.dart';
 
 class MainScreen extends StatefulWidget {
   MainScreen();
@@ -259,6 +259,7 @@ class _MainScreenState extends State<MainScreen> {
             TextButton(
               onPressed: () {
                 scaffoldMessenger.hideCurrentSnackBar();
+                SessionManager.removeSessionData();
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
@@ -308,7 +309,7 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => StatisticsScreen(
+                        builder: (context) =>StatisticsScreen(
                           username: username,
                         )),
                   );
@@ -441,7 +442,7 @@ class _MainScreenState extends State<MainScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => ShopScreen(
+                                builder: (context) => shop.ShopScreen(
                                   username: username,
                                 )),
                           );
