@@ -312,11 +312,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       ),
                       child: ListTile(
                         leading: CircleAvatar(
+                          backgroundImage: AssetImage('assets/images/avatares/${friend.avatar}.png'),
                           backgroundColor: Colors.white.withOpacity(0.3),
-                          child: Text(
-                            friend.avatar.isNotEmpty ? friend.avatar[0] : '?',
+                          // Fallback cuando la imagen no se encuentra
+                          onBackgroundImageError: (exception, stackTrace) {
+                            print('Error cargando imagen de avatar: $exception');
+                          },
+                          child: friend.avatar.isEmpty
+                              ? Text(
+                            friend.username[0],
                             style: TextStyle(color: Colors.white),
-                          ),
+                          )
+                              : null,
                         ),
                         title: Text(
                           friend.username,
@@ -508,11 +515,17 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
+                        backgroundImage: AssetImage('assets/images/avatares/${user.avatar}.png'),
                         backgroundColor: Colors.white.withOpacity(0.3),
-                        child: Text(
-                          user.avatar.isNotEmpty ? user.avatar[0] : '?',
+                        onBackgroundImageError: (exception, stackTrace) {
+                          print('Error cargando imagen de avatar: $exception');
+                        },
+                        child: user.avatar.isEmpty
+                            ? Text(
+                          user.username[0],
                           style: TextStyle(color: Colors.white),
-                        ),
+                        )
+                            : null,
                       ),
                       title: Text(
                         user.username,
@@ -661,11 +674,17 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
+                        backgroundImage: AssetImage('assets/images/avatares/${user.avatar}.png'),
                         backgroundColor: Colors.white.withOpacity(0.3),
-                        child: Text(
-                          user.avatar.isNotEmpty ? user.avatar[0] : '?',
+                        onBackgroundImageError: (exception, stackTrace) {
+                          print('Error cargando imagen de avatar: $exception');
+                        },
+                        child: user.avatar.isEmpty
+                            ? Text(
+                          user.username[0],
                           style: TextStyle(color: Colors.white),
-                        ),
+                        )
+                            : null,
                       ),
                       title: Text(
                         user.username,
