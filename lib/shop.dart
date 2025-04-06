@@ -95,7 +95,7 @@ class _ShopScreenState extends State<ShopScreen> {
             'Cookie': 'access_token=$token',
           }
       );
-
+      print(res);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         List<ShopCategory> fetchedCategories = [];
@@ -315,10 +315,10 @@ class _ShopScreenState extends State<ShopScreen> {
                     String imagePath;
                     if (category.name.toLowerCase().contains('avatar')) {
                       imagePath =
-                      'images/avatares/${product.name}.png';
+                      'assets/images/avatares/${product.name}.png';
                     } else {
                       imagePath =
-                      'images/backgrounds/${product.name}.png';
+                      'assets/images/backgrounds/${product.name}.png';
                     }
 
                     return ShopItemCard(

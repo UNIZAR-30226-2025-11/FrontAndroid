@@ -8,6 +8,7 @@ import 'package:flutter_example/lobbyLeader.dart';
 import 'package:flutter_example/statistics.dart';
 import 'SessionManager.dart';
 import 'editProfile.dart';
+import 'friends.dart';
 import 'game.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'joinGame.dart';
@@ -339,6 +340,20 @@ class _MainScreenState extends State<MainScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => LoginScreen()),
+                  );
+                  }
+
+              ),
+              SizedBox(height: 20),
+              ListTile(
+                  leading: Icon(Icons.people),
+                  title: Text("Friends"),
+                  onTap:(){ _showLogOutBar;
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => FriendsScreen()),
                   );
                   }
 
