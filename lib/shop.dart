@@ -95,7 +95,8 @@ class _ShopScreenState extends State<ShopScreen> {
             'Cookie': 'access_token=$token',
           }
       );
-      print(res);
+      print('res:');
+      print(res.statusCode);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         List<ShopCategory> fetchedCategories = [];

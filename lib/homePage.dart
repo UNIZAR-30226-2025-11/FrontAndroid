@@ -335,7 +335,7 @@ class _MainScreenState extends State<MainScreen> {
                 leading: Icon(Icons.logout),
                 title: Text("Logout"),
                 onTap:(){ _showLogOutBar;
-                  SessionManager.removeSessionData();
+                  //SessionManager.removeSessionData();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -349,7 +349,6 @@ class _MainScreenState extends State<MainScreen> {
                   leading: Icon(Icons.people),
                   title: Text("Friends"),
                   onTap:(){ _showLogOutBar;
-                  SessionManager.removeSessionData();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
