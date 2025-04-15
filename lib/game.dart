@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import 'SessionManager.dart';
@@ -36,6 +37,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   String turnUsername = "";
   int cardsLeftInDeck = 0;
   late int coins=-1;
+  bool _isChatVisible = false;
+  List<MsgJSON> _messages = [];
+  final TextEditingController _chatController = TextEditingController();
+  final ScrollController _chatScrollController = ScrollController();
 
   final ScrollController _scrollController = ScrollController();
   List<int> selectedCards = [];
@@ -79,6 +84,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       print('fin');
     }
     setupSocketListeners();
+    setupChatSocketListeners();
     _initializeUsername();
     _initializeCoins();
     //startTimer();
@@ -615,6 +621,47 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
   }
 
+  void setupChatSocketListeners() {
+    socket.on('get-messages', (data) {
+      if (mounted) {
+        setState(() {
+          BackendGetMessagesJSON messagesData = BackendGetMessagesJSON.fromJson(data);
+          if (!messagesData.error) {
+            _messages = messagesData.messages;
+
+            // Desplaza automáticamente hasta el último mensaje
+            Future.delayed(Duration(milliseconds: 100), () {
+              if (_chatScrollController.hasClients) {
+                _chatScrollController.animateTo(
+                  _chatScrollController.position.maxScrollExtent,
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
+          } else {
+            print('Error getting messages: ${messagesData.errorMsg}');
+          }
+        });
+      }
+    });
+  }
+
+  void _sendChatMessage() {
+    if (_chatController.text.isEmpty) return;
+
+    FrontendPostMsgJSON postMsg = FrontendPostMsgJSON(
+      error: false,
+      errorMsg: "",
+      msg: _chatController.text,
+      lobbyId: widget.lobbyId,
+    );
+
+    socket.emit('post-message', postMsg.toJson());
+    _chatController.clear();
+  }
+
+
   void sendGameAction(List<int> selectedCardIndices) {
     List<CardJSON> playedCards = selectedCardIndices.isEmpty
         ? [] // Si la lista está vacía, asignamos una lista vacía
@@ -665,6 +712,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket.off('game-select-card');
     socket.off('game-select-card-type');
     socket.off('game-played-cards');
+    socket.off('get-messages');
 
     // Cancel timers
     //timer.cancel();
@@ -673,7 +721,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     for (var card in animatingCards) {
       (card['controller'] as AnimationController).dispose();
     }
-
+    _chatController.dispose();
+    _chatScrollController.dispose();
     super.dispose();
   }
 
@@ -685,14 +734,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         automaticallyImplyLeading: false,
       ),*/
       backgroundColor: Color(0xFF9D0514),
-      body: Stack(children: [
+      body: Stack(
+          children: [
         Positioned(
           top: 48,
           right: 30,
           child: Row(
             children: [
               SizedBox(width: 8),
-              Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+              Icon(Icons.monetization_on, color: Color(0xFF9D0514), size: 30),
               SizedBox(width: 8),
               Text('$coins',
                   style: TextStyle(color: Colors.white, fontSize: 18)),
@@ -846,9 +896,198 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             ),
           ),
         ),
-      ]),
+            Positioned(
+              top: 100,
+              right: 20,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isChatVisible = !_isChatVisible;
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Badge(
+                    isLabelVisible: _messages.isNotEmpty && !_isChatVisible,
+                    child: Icon(
+                      Icons.chat_bubble_outline,
+                      color: Color(0xFF9D0514),
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Panel deslizante del chat
+            AnimatedPositioned(
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              right: _isChatVisible ? 0 : -300,
+              top: 0,
+              bottom: 0,
+              width: 300,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(-2, 0),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Encabezado del chat
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      color: Color(0xFF9D0514),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Chat',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close, color: Colors.white),
+                            onPressed: () {
+                              setState(() {
+                                _isChatVisible = false;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Lista de mensajes
+                    Expanded(
+                      child: _messages.isEmpty
+                          ? Center(
+                        child: Text(
+                          'No messages yet',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                          : ListView.builder(
+                        controller: _chatScrollController,
+                        padding: EdgeInsets.all(10),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          final message = _messages[index];
+                          final isMe = message.username == username;
+
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 8),
+                            child: Align(
+                              alignment: isMe
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: Container(
+                                constraints: BoxConstraints(
+                                  maxWidth: 230,
+                                ),
+                                padding: EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: isMe ? Colors.blue.shade100 : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (!isMe)
+                                      Padding(
+                                        padding: EdgeInsets.only(bottom: 4),
+                                        child: Text(
+                                          message.username,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF9D0514),
+                                          ),
+                                        ),
+                                      ),
+                                    Text(message.msg),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      _formatDate(message.date),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Input para enviar mensajes
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, -1),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _chatController,
+                              decoration: InputDecoration(
+                                hintText: 'Write a message...',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _sendChatMessage(),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.send, color: Color(0xFF9D0514)),
+                            onPressed: _sendChatMessage,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+      ),
     );
   }
+
+
 
   Widget _buildTimerIndicator() {
     return TweenAnimationBuilder(
@@ -1055,5 +1294,37 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         );
       }).toList(),
     );
+  }
+}
+
+String _formatDate(String dateStr) {
+  try {
+    // Intenta parsear como ISO 8601 primero
+    DateTime date = DateTime.parse(dateStr);
+    return DateFormat('HH:mm').format(date);
+  } catch (e) {
+    try {
+      // formato dd/MM/yyyy HH:mm:ss
+      List<String> parts = dateStr.split(' ');
+      if (parts.length == 2) {
+        List<String> dateParts = parts[0].split('/');
+        List<String> timeParts = parts[1].split(':');
+
+        if (dateParts.length == 3 && timeParts.length == 3) {
+          DateTime date = DateTime(
+            int.parse(dateParts[2]),  // año
+            int.parse(dateParts[1]),  // mes
+            int.parse(dateParts[0]),  // día
+            int.parse(timeParts[0]),  // hora
+            int.parse(timeParts[1]),  // minuto
+            int.parse(timeParts[2]),  // segundo
+          );
+          return DateFormat('HH:mm').format(date);
+        }
+      }
+      return DateFormat('HH:mm').format(DateTime.now());
+    } catch (e) {
+      return dateStr.contains(' ') ? dateStr.split(' ')[1].substring(0, 5) : 'Ahora';
+    }
   }
 }
