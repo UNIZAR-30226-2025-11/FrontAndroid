@@ -48,6 +48,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   //late Timer timer;
   late String username;
 
+  // for animating cards when being played
   List<Map<String, dynamic>> animatingCards = [];
   bool isAnimating = false;
 
@@ -223,9 +224,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       String targetName = action['targetUser'];
       String triggerName = action['triggerUser'];
       String act = action['action'];
+      print('Action received: $action');
       switch (act) {
-      // TODO: realizar accion según campo action
-
+        case("ShuffleDeck"):
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const ShuffleAnimationWidget(),
+          );
       }
       showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
     }
@@ -294,7 +300,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
 
     socket.on('game-select-player', (data) {
-      print('select-game recibido');
+      print('select-game-player recibido');
       setState(() {
         BackendGameSelectPlayerJSON selectPlayerData =
         BackendGameSelectPlayerJSON.fromJson(data);
@@ -343,7 +349,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
 
     socket.on('game-select-card', (data) {
-      print('select card revibido');
+      print('select card recibido');
       setState(() {
         BackendGameSelectCardJSON selectCardData =
         BackendGameSelectCardJSON.fromJson(data);
@@ -595,6 +601,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
     socket.on('game-played-cards', (data) {
       print("respuesta a cartas recibida");
+      print("Raw data: $data");
       BackendGamePlayedCardsResponseJSON response =
       BackendGamePlayedCardsResponseJSON.fromJson(data);
 
@@ -608,10 +615,19 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         setState(() {
           print("Actualizando estado");
           if (response.cardsSeeFuture != null){
-            //TODO: mostrar cartas
+            List<String> imagePaths = response.cardsSeeFuture!
+                .map((cardJson) => 'assets/images/${cardJson.type}.jpg')
+                .toList();
+            if (imagePaths.isNotEmpty) {
+              showCardPopup(context, imagePaths);
+            }
           }
-          if(response.cardReceived != null){
-            //TODO: animacion mostrar carta?
+          if(response.cardReceived != null &&
+              response.cardReceived!.id != -1) {
+            print("Received card: ${response.cardReceived?.type}");
+            String imagePath = 'assets/images/${response.cardReceived!.type}.jpg';
+            print(imagePath);
+            showCardPopup(context, [imagePath]);
           }
           timeOut = 0;
           _buildTimerIndicator();
@@ -664,12 +680,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   void sendGameAction(List<int> selectedCardIndices) {
     List<CardJSON> playedCards = selectedCardIndices.isEmpty
-        ? [] // Si la lista está vacía, asignamos una lista vacía
+        ? []
         : selectedCardIndices.map((index) => playerCards[index]).toList();
 
-    // Usar jsonEncode para convertir la lista a una cadena JSON (incluso si es vacía)
-    String playedCardsJson = jsonEncode(playedCards);
+    // Start card animation before sending
+    if (selectedCardIndices.isNotEmpty) {
+      animatePlayedCards(selectedCardIndices);
+    }
 
+    String playedCardsJson = jsonEncode(playedCards);
     print('enviando cartas');
     print(playedCardsJson);
 
@@ -681,9 +700,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     );
 
     socket.emit('game-played-cards', gamePlayedData.toJson());
-
     print("cartas enviadas");
-
   }
 
   /*void startTimer() {
@@ -717,10 +734,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     // Cancel timers
     //timer.cancel();
 
-    // Dispose animation controllers
+    // Dispose all animation controllers
     for (var card in animatingCards) {
       (card['controller'] as AnimationController).dispose();
     }
+
     _chatController.dispose();
     _chatScrollController.dispose();
     super.dispose();
@@ -814,9 +832,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             children: [
               ElevatedButton(
                 onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3
-                    ? () {
-                        _animatePlayedCards();
-                        //sendGameAction(selectedCards);
+                    && turnUsername == username ? () {
+                        sendGameAction(selectedCards);
                       }
                     : null,
                 child: Text('Play Cards'),
@@ -896,6 +913,64 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             ),
           ),
         ),
+            if (isAnimating)
+              ...animatingCards.map((cardData) {
+                return AnimatedBuilder(
+                  animation: cardData['controller'],
+                  builder: (context, child) {
+                    // Calculate position - start from bottom center, move to center
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final screenHeight = MediaQuery.of(context).size.height;
+
+                    // Starting position (player's hand)
+                    double startX = screenWidth / 2 + (cardData['index'] - selectedCards.length / 2) * 30;
+                    double startY = screenHeight - 100;
+
+                    // Ending position (center of screen)
+                    double endX = screenWidth / 2;
+                    double endY = screenHeight / 2;
+
+                    // Calculate current position
+                    double currentX = startX + (endX - startX) * cardData['moveAnimation'].value;
+                    double currentY = startY + (endY - startY) * cardData['moveAnimation'].value;
+
+                    // Calculate rotation based on position
+                    double rotation = (cardData['moveAnimation'].value * 0.3) * (cardData['index'] % 2 == 0 ? 1 : -1);
+
+                    return Positioned(
+                      left: currentX - 50, // Adjust for card width
+                      top: currentY - 75, // Adjust for card height
+                      child: Transform.rotate(
+                        angle: rotation,
+                        child: Opacity(
+                          opacity: cardData['opacityAnimation'].value,
+                          child: Container(
+                            height: 150,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.asset(
+                                cardData['imagePath'],
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
             Positioned(
               top: 100,
               right: 20,
@@ -1202,98 +1277,64 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _animatePlayedCards() {
-    if (selectedCards.isEmpty || isAnimating) return;
+  void animatePlayedCards(List<int> cardIndices) {
+    if (cardIndices.isEmpty) return;
 
     setState(() {
       isAnimating = true;
-      animatingCards.clear(); // Clear previous animations
+      animatingCards.clear();
 
-      // Calculate the starting position (position of the card in the hand)
-      final double startX = MediaQuery.of(context).size.width / 2 - 150;
-      final double startY = MediaQuery.of(context).size.height - 100;
-
-      // Create animation data for each selected card
-      animatingCards = selectedCards.asMap().entries.map((entry) {
-        final index = entry.key;
-        final cardIndex = entry.value;
-
-        final controller = AnimationController(
-          duration: const Duration(milliseconds: 800),
+      for (int index in cardIndices) {
+        // Create an animation controller for each card
+        AnimationController controller = AnimationController(
+          duration: Duration(milliseconds: 800),
           vsync: this,
         );
 
-        final position = Tween<Offset>(
-          begin: Offset(startX + (index * 116), 0), // Starting from card position
-          end: Offset(
-            MediaQuery.of(context).size.width / 2 - 50, // Center of screen
-            MediaQuery.of(context).size.height * 0.3,   // Target Y position
-          ),
+        // Get the card data
+        CardJSON card = playerCards[index];
+        String imagePath = 'assets/images/${card.type}.jpg';
+
+        // Create animations for position and opacity
+        Animation<double> moveAnimation = Tween<double>(
+          begin: 0.0,
+          end: 1.0,
         ).animate(CurvedAnimation(
           parent: controller,
-          curve: Curves.easeOut,
+          curve: Curves.easeOutQuad,
         ));
 
-        return {
-          'card': playerCards[cardIndex],
+        Animation<double> opacityAnimation = Tween<double>(
+          begin: 1.0,
+          end: 0.0,
+        ).animate(CurvedAnimation(
+          parent: controller,
+          curve: Interval(0.5, 1.0, curve: Curves.easeOut),
+        ));
+
+        // Store all animation data
+        animatingCards.add({
           'controller': controller,
-          'position': position,
-        };
-      }).toList();
+          'moveAnimation': moveAnimation,
+          'opacityAnimation': opacityAnimation,
+          'imagePath': imagePath,
+          'index': index,
+        });
+
+        // Start animation with a slight delay for each card
+        Future.delayed(Duration(milliseconds: 100 * animatingCards.length - 1), () {
+          controller.forward().then((_) {
+            // When the last animation completes, clear the list
+            if (index == cardIndices.last) {
+              setState(() {
+                isAnimating = false;
+                animatingCards.clear();
+              });
+            }
+          });
+        });
+      }
     });
-
-    // Start all animations
-    for (final card in animatingCards) {
-      (card['controller'] as AnimationController).forward();
-    }
-
-    // When animation completes, send the action and clean up
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (!mounted) return;
-
-      sendGameAction(selectedCards);
-      setState(() {
-        isAnimating = false;
-        animatingCards.clear();
-      });
-    });
-  }
-
-  Widget _buildPlayedCardsArea() {
-    if (!isAnimating) return Container();
-
-    return Stack(
-      children: animatingCards.map((cardData) {
-        String cardName = cardData['cardName'];
-        String imagePath = 'assets/images/$cardName.jpg';
-        AnimationController controller = cardData['controller'];
-        Animation<Offset> position = cardData['position'];
-
-        return AnimatedBuilder(
-          animation: controller,
-          builder: (context, child) {
-            return Transform.translate(
-              offset: position.value,
-              child: Container(
-                height: 150,
-                width: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.fill,
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      }).toList(),
-    );
   }
 }
 
@@ -1328,3 +1369,175 @@ String _formatDate(String dateStr) {
     }
   }
 }
+
+// Method to show received cards (for actions like SeeFuture)
+void showCardPopup(BuildContext context, List<String> cardImagePaths) {
+  if (cardImagePaths.isEmpty) return;
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: 200,
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: cardImagePaths.length > 1
+                ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: cardImagePaths.map((path) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Image.asset(path, width: 80, height: 120),
+                );
+              }).toList(),
+            )
+                : Image.asset(cardImagePaths[0], width: 100, height: 150),
+          ),
+        ),
+      );
+    },
+  );
+
+  Future.delayed(const Duration(seconds: 2), () {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  });
+}
+
+class ShuffleAnimationWidget extends StatefulWidget {
+  final VoidCallback? onComplete;
+
+  const ShuffleAnimationWidget({super.key, this.onComplete});
+
+  @override
+  State<ShuffleAnimationWidget> createState() => _ShuffleAnimationWidgetState();
+}
+
+class _ShuffleAnimationWidgetState extends State<ShuffleAnimationWidget> with TickerProviderStateMixin {
+  late AnimationController _mainShuffleController;
+  late AnimationController _secondaryShuffleController;
+  late AnimationController _sparkleController;
+  bool _show = true;
+  final Random _random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+
+    _mainShuffleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _secondaryShuffleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _sparkleController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat();
+
+    _mainShuffleController.forward().then((_) {
+      _secondaryShuffleController.forward().then((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          _sparkleController.stop();
+          widget.onComplete?.call();
+          Navigator.of(context).pop(); // <-- THIS LINE closes the dialog
+        });
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _mainShuffleController.dispose();
+    _secondaryShuffleController.dispose();
+    _sparkleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_show) return const SizedBox.shrink();
+
+    return Scaffold(
+      backgroundColor: Colors.black.withOpacity(0.5),
+      body: Center(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Sparkles
+            for (int i = 0; i < 8; i++) _buildSparkle(),
+
+            // Cards
+            ...List.generate(3, (i) => _buildCard(i)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(int index) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_mainShuffleController, _secondaryShuffleController]),
+      builder: (_, __) {
+        double offset1 = 30.0 * sin(_mainShuffleController.value * pi + index);
+        double offset2 = 10.0 * sin(_secondaryShuffleController.value * pi + index * 0.5);
+        double rotation = 0.1 * sin((_mainShuffleController.value + _secondaryShuffleController.value) * pi + index);
+
+        return Transform.translate(
+          offset: Offset(offset1 + offset2 + (index - 1) * 20, 0),
+          child: Transform.rotate(
+            angle: rotation,
+            child: Opacity(
+              opacity: 1.0,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                width: 140,
+                height: 200,
+                decoration: BoxDecoration(
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/back_card.jpg'), // Your card back image
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(2, 4)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSparkle() {
+    double top = _random.nextDouble() * 100 - 50;
+    double left = _random.nextDouble() * 150 - 75;
+    double size = 6 + _random.nextDouble() * 6;
+
+    return AnimatedBuilder(
+      animation: _sparkleController,
+      builder: (_, __) {
+        double offsetY = 10 * sin(_sparkleController.value * 2 * pi);
+        double opacity = 0.5 + 0.5 * cos(_sparkleController.value * 2 * pi);
+
+        return Positioned(
+          top: 60 + top + offsetY,
+          left: 100 + left,
+          child: Opacity(
+            opacity: opacity,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+
+

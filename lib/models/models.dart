@@ -199,8 +199,8 @@ class BackendGamePlayedCardsResponseJSON {
           .map((cards) => CardJSON.fromJson(cards))
           .toList()
           : null,
-      cardReceived: json['cardsReceived'] != null
-          ? CardJSON.fromJson(json['cardsReceived'])
+      cardReceived: json['cardReceived'] != null
+          ? CardJSON.fromJson(json['cardReceived'])
           : null,
     );
   }
