@@ -232,6 +232,21 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             barrierDismissible: false,
             builder: (_) => const ShuffleAnimationWidget(),
           );
+          break;
+        case("BombExploded"):
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => BombExplosionDialog(
+              eliminatedPlayer: triggerName,
+            ),
+          );
+          break;
+        case("BombDefused"):
+          showDialog(
+            context: context,
+            builder: (_) => BombDiffusedDialog(player: triggerName),
+          );
       }
       showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
     }
@@ -1401,7 +1416,7 @@ void showCardPopup(BuildContext context, List<String> cardImagePaths) {
     },
   );
 
-  Future.delayed(const Duration(seconds: 2), () {
+  Future.delayed(const Duration(seconds: 1), () {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -1539,5 +1554,135 @@ class _ShuffleAnimationWidgetState extends State<ShuffleAnimationWidget> with Ti
   }
 }
 
+class BombExplosionDialog extends StatefulWidget {
+  final String eliminatedPlayer;
 
+  const BombExplosionDialog({super.key, required this.eliminatedPlayer});
+
+  @override
+  State<BombExplosionDialog> createState() => _BombExplosionDialogState();
+}
+
+class _BombExplosionDialogState extends State<BombExplosionDialog>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _explosionScale;
+  bool _showExplosion = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _explosionScale = Tween<double>(begin: 0.0, end: 1.5).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.forward().then((_) {
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            setState(() {
+              _showExplosion = false;
+            });
+
+            // Auto-dismiss after 2 more seconds
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) Navigator.of(context).pop();
+            });
+          }
+        });
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black87.withOpacity(0.85),
+      child: Container(
+        width: 300,
+        height: 300,
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: _showExplosion
+              ? ScaleTransition(
+            scale: _explosionScale,
+            child: Image.asset('assets/images/explosion.jpg',
+                width: 150, height: 150),
+          )
+              : Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.warning,
+                  color: Colors.red, size: 50),
+              const SizedBox(height: 12),
+              Text(
+                '${widget.eliminatedPlayer} has been eliminated!',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BombDiffusedDialog extends StatelessWidget {
+  final String player;
+
+  const BombDiffusedDialog({Key? key, required this.player}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Schedule dialog to close after 2 seconds
+    Future.delayed(const Duration(seconds: 2), () {
+      if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+    });
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/diffuse_cat.jpg', height: 150),
+            const SizedBox(height: 20),
+            Text(
+              '$player has successfully defused the bomb!',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
