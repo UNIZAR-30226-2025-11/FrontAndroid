@@ -956,3 +956,184 @@ class MsgJSON {
     };
   }
 }
+
+
+class UserPersonalizeData {
+  String avatar;
+  String background;
+
+  UserPersonalizeData({
+    this.avatar = 'assets/images/avatares/avatar1.png',
+    this.background = 'assets/images/backgrounds/background.jpg',
+  });
+
+  factory UserPersonalizeData.fromJson(Map<String, dynamic> json) {
+    return UserPersonalizeData(
+      avatar: json['avatar'] ?? 'assets/images/avatares/avatar1.png',
+      background: json['background'] ?? 'assets/images/backgrounds/background.jpg',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'avatar': avatar,
+    'background': background,
+  };
+}
+
+
+// Clase para los registros de partidas
+class RecordJSON {
+  DateTime gameDate;
+  bool isWinner;
+  String lobbyId;
+
+  RecordJSON({
+    required this.gameDate,
+    this.isWinner = false,
+    this.lobbyId = '',
+  });
+
+  // Constructor desde JSON
+  factory RecordJSON.fromJson(Map<String, dynamic> json) {
+    return RecordJSON(
+      gameDate: json['gameDate'] != null
+          ? DateTime.parse(json['gameDate'])
+          : DateTime.now(),
+      isWinner: json['isWinner'] ?? false,
+      lobbyId: json['lobbyId'] ?? '',
+    );
+  }
+
+  // Convertir a JSON
+  Map<String, dynamic> toJson() => {
+    'gameDate': gameDate.toIso8601String(),
+    'isWinner': isWinner,
+    'lobbyId': lobbyId,
+  };
+}
+
+// Clase para las estadísticas del usuario
+class StatisticsJSON {
+  int gamesPlayed;
+  int gamesWon;
+  int currentStreak;
+  int bestStreak;
+  int totalTimePlayed; // en segundos
+  int totalTurnsPlayed;
+  List<RecordJSON> lastFiveGames;
+
+  StatisticsJSON({
+    this.gamesPlayed = 0,
+    this.gamesWon = 0,
+    this.currentStreak = 0,
+    this.bestStreak = 0,
+    this.totalTimePlayed = 0,
+    this.totalTurnsPlayed = 0,
+    List<RecordJSON>? lastFiveGames,
+  }) : this.lastFiveGames = lastFiveGames ?? [];
+
+  // Constructor desde JSON
+  factory StatisticsJSON.fromJson(Map<String, dynamic> json) {
+    // Procesar el array de los últimos cinco juegos
+    List<RecordJSON> gameRecords = [];
+    if (json['lastFiveGames'] != null) {
+      gameRecords = (json['lastFiveGames'] as List)
+          .map((game) => RecordJSON.fromJson(game))
+          .toList();
+    }
+
+    return StatisticsJSON(
+      gamesPlayed: json['gamesPlayed'] ?? 0,
+      gamesWon: json['gamesWon'] ?? 0,
+      currentStreak: json['currentStreak'] ?? 0,
+      bestStreak: json['bestStreak'] ?? 0,
+      totalTimePlayed: json['totalTimePlayed'] ?? 0,
+      totalTurnsPlayed: json['totalTurnsPlayed'] ?? 0,
+      lastFiveGames: gameRecords,
+    );
+  }
+
+  // Convertir a JSON
+  Map<String, dynamic> toJson() => {
+    'gamesPlayed': gamesPlayed,
+    'gamesWon': gamesWon,
+    'currentStreak': currentStreak,
+    'bestStreak': bestStreak,
+    'totalTimePlayed': totalTimePlayed,
+    'totalTurnsPlayed': totalTurnsPlayed,
+    'lastFiveGames': lastFiveGames.map((game) => game.toJson()).toList(),
+  };
+
+  // Método auxiliar para agregar un nuevo registro
+  void addGameRecord(RecordJSON record) {
+    lastFiveGames.add(record);
+    if (lastFiveGames.length > 5) {
+      lastFiveGames.removeAt(0); // Mantener solo los últimos 5 juegos
+    }
+  }
+}
+
+// Clase para los datos personalizados del usuario
+class UserPersonalizedDataJSON {
+  String avatar;
+  String background;
+
+  UserPersonalizedDataJSON({
+    this.avatar = 'default_avatar.png',
+    this.background = 'default_background.png',
+  });
+
+  // Constructor desde JSON
+  factory UserPersonalizedDataJSON.fromJson(Map<String, dynamic> json) {
+    return UserPersonalizedDataJSON(
+      avatar: json['avatar'] ?? 'default_avatar.png',
+      background: json['background'] ?? 'default_background.png',
+    );
+  }
+
+  // Convertir a JSON
+  Map<String, dynamic> toJson() => {
+    'avatar': avatar,
+    'background': background,
+  };
+}
+
+// Clase principal de usuario
+class UserJSON {
+  String username;
+  int coins;
+  StatisticsJSON statistics;
+  UserPersonalizedDataJSON userPersonalizedData;
+
+  UserJSON({
+    required this.username,
+    this.coins = 0,
+    StatisticsJSON? statistics,
+    UserPersonalizedDataJSON? userPersonalizedData,
+  }) :
+        this.statistics = statistics ?? StatisticsJSON(),
+        this.userPersonalizedData = userPersonalizedData ?? UserPersonalizedDataJSON();
+
+  // Constructor desde JSON
+  factory UserJSON.fromJson(Map<String, dynamic> json) {
+    return UserJSON(
+      username: json['username'] ?? '',
+      coins: json['coins'] ?? 0,
+      statistics: json['statistics'] != null
+          ? StatisticsJSON.fromJson(json['statistics'])
+          : StatisticsJSON(),
+      userPersonalizedData: json['userPersonalizedData'] != null
+          ? UserPersonalizedDataJSON.fromJson(json['userPersonalizedData'])
+          : UserPersonalizedDataJSON(),
+    );
+  }
+
+  // Convertir a JSON
+  Map<String, dynamic> toJson() => {
+    'username': username,
+    'coins': coins,
+    'statistics': statistics.toJson(),
+    'userPersonalizedData': userPersonalizedData.toJson(),
+  };
+}
+

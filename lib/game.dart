@@ -117,7 +117,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     try {
       final String? token = await SessionManager.getSessionData();
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/users'),
+          Uri.parse('http://10.0.2.2:8000/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -134,21 +134,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         print(errorMessage);
         return;
       } else {
-        // Find the user with matching username
-        final user = (data as List).firstWhere(
-              (user) => user['username'] == username,
-          orElse: () => null,
-        );
 
-        if (user != null) {
-          // Use setState to update the UI
-          setState(() {
-            coins = int.parse(user['coins'].toString());
-          });
-          print("Found user, coins: $coins");
-        } else {
-          print("User not found in the response data");
-        }
+        // Use setState to update the UI
+        setState(() {
+          coins = int.parse(data['coins'].toString());
+        });
+        print("Found user, coins: $coins");
       }
     } catch (e) {
       print("Error initializing coins: $e");
@@ -839,7 +830,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           child: Row(
             children: [
               SizedBox(width: 8),
-              Icon(Icons.monetization_on, color: Color(0xFF9D0514), size: 30),
+              Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
               SizedBox(width: 8),
               Text('$coins',
                   style: TextStyle(color: Colors.white, fontSize: 18)),

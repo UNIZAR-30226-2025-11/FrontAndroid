@@ -56,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/users'),
+          Uri.parse('http://10.0.2.2:8000/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -73,21 +73,12 @@ class _MainScreenState extends State<MainScreen> {
         print(errorMessage);
         return;
       } else {
-        // Find the user with matching username
-        final user = (data as List).firstWhere(
-              (user) => user['username'] == username,
-          orElse: () => null,
-        );
 
-        if (user != null) {
           // Use setState to update the UI
-          setState(() {
-            coins = int.parse(user['coins'].toString());
-          });
-          print("Found user, coins: $coins");
-        } else {
-          print("User not found in the response data");
-        }
+        setState(() {
+          coins = int.parse(data['coins'].toString());
+        });
+        print("Found user, coins: $coins");
       }
     } catch (e) {
       print("Error initializing coins: $e");
@@ -244,46 +235,48 @@ class _MainScreenState extends State<MainScreen> {
 
   // Método para mostrar el Snackbar de confirmación de logout
   void _showLogOutBar() {
-    Navigator.pop(
-        context); // Cierra el drawer de perfil antes de mostrar el Snackbar
+    // First, get a reference to the scaffold context before closing the drawer
+    final mainContext = context;
 
-    var scaffoldMessenger = ScaffoldMessenger.of(context);
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text("Are you sure you want to log out?",
-                  style: TextStyle(color: Colors.white)),
-            ),
-            TextButton(
-              onPressed: () {
-                scaffoldMessenger.hideCurrentSnackBar();
-                SessionManager.removeSessionData();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => LoginScreen()), // Redirige al login
-                );
-              },
-              child: Text("YES", style: TextStyle(color: Colors.white)),
-            ),
-            TextButton(
-              onPressed: () {
-                scaffoldMessenger
-                    .hideCurrentSnackBar(); // Descartar el Snackbar
-              },
-              child: Text("NO", style: TextStyle(color: Colors.white70)),
-            ),
-          ],
+    // Close the drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(mainContext).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(mainContext).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    mainContext,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(mainContext).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
         ),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.redAccent,
-        duration: Duration(
-            days: 365), // Lo mantiene abierto hasta que el usuario interactúe
-      ),
-    );
+      );
+    });
   }
 
   // Método para abrir el drawer de perfil
@@ -334,13 +327,13 @@ class _MainScreenState extends State<MainScreen> {
               ListTile(
                 leading: Icon(Icons.logout),
                 title: Text("Logout"),
-                onTap:(){ _showLogOutBar;
+                onTap:(){ _showLogOutBar();
                   //SessionManager.removeSessionData();
-                  Navigator.pushReplacement(
+                  /*Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                         builder: (context) => LoginScreen()),
-                  );
+                  );*/
                   }
 
               ),
@@ -348,7 +341,7 @@ class _MainScreenState extends State<MainScreen> {
               ListTile(
                   leading: Icon(Icons.people),
                   title: Text("Friends"),
-                  onTap:(){ _showLogOutBar;
+                  onTap:(){
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(

@@ -113,7 +113,7 @@ class _StartGameScreenState extends State<WaitingScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/users'),
+          Uri.parse('http://10.0.2.2:8000/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -130,21 +130,12 @@ class _StartGameScreenState extends State<WaitingScreen> {
         print(errorMessage);
         return;
       } else {
-        // Find the user with matching username
-        final user = (data as List).firstWhere(
-              (user) => user['username'] == username,
-          orElse: () => null,
-        );
 
-        if (user != null) {
-          // Use setState to update the UI
-          setState(() {
-            coins = int.parse(user['coins'].toString());
-          });
-          print("Found user, coins: $coins");
-        } else {
-          print("User not found in the response data");
-        }
+        // Use setState to update the UI
+        setState(() {
+          coins = int.parse(data['coins'].toString());
+        });
+        print("Found user, coins: $coins");
       }
     } catch (e) {
       print("Error initializing coins: $e");

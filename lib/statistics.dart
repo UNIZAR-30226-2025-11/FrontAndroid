@@ -1,12 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'package:flutter/material.dart';
 
 import 'SessionManager.dart';
+import 'models/models.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final String username;
@@ -17,11 +16,7 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  int gamesWon = 0;
-  int gamesLost = 0;
-  int totalGames = 0;
-  int coins = 0;
-  List<Map<String, String>> lastFiveGames = [];
+  UserJSON? userData;
   late String username;
   bool isLoading = true;
 
@@ -48,7 +43,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         }
       }
 
-      // Then fetch the user data - now directly requesting a specific user
+      // Then fetch the user data
       final String? token = await SessionManager.getSessionData();
       if (token == null || token.isEmpty) {
         throw Exception("Authentication token not available");
@@ -70,18 +65,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         throw Exception(errorMessage);
       }
 
+      // Parsear los datos usando nuestras clases JSON
       setState(() {
-        coins = int.parse(data['coins'].toString());
-        gamesWon = int.parse(data['games_won'].toString());
-        int gamesPlayed = int.parse(data['games_played'].toString());
-        gamesLost = gamesPlayed - gamesWon;
-        totalGames = gamesPlayed;
-
-        // FIXME: return the real data when the API is ready
-        lastFiveGames = List.generate(
-            min(5, totalGames),
-                (index) => {'result': index < gamesWon ? 'Win' : 'Loss'}
-        );
+        userData = UserJSON.fromJson(data);
       });
     } catch (e) {
       print("Error fetching user data: $e");
@@ -98,6 +84,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       }
     }
   }
+
+  // Obtener el número de partidas perdidas
+  int get gamesLost => (userData?.statistics.gamesPlayed ?? 0) - (userData?.statistics.gamesWon ?? 0);
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +110,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       Icon(Icons.person, size: 30, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                        username,
+                        userData?.username ?? username,
                         style: TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ],
@@ -132,7 +121,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
                       SizedBox(width: 8),
                       Text(
-                        '$coins',
+                        '${userData?.coins ?? 0}',
                         style: TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ],
@@ -149,7 +138,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ),
               ),
               SizedBox(height: 32),
-              totalGames > 0
+              (userData?.statistics.gamesPlayed ?? 0) > 0
                   ? Container(
                 height: 240,
                 padding: EdgeInsets.all(16),
@@ -163,7 +152,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     barGroups: [
                       BarChartGroupData(x: 0, barRods: [
                         BarChartRodData(
-                          toY: gamesWon.toDouble(),
+                          toY: (userData?.statistics.gamesWon ?? 0).toDouble(),
                           color: Colors.green,
                           borderRadius: BorderRadius.vertical(
                               top: Radius.circular(4)
@@ -259,12 +248,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     SizedBox(height: 12),
                     Text(
-                      'Total Games Played: $totalGames',
+                      'Total Games Played: ${userData?.statistics.gamesPlayed ?? 0}',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Games Won: $gamesWon',
+                      'Games Won: ${userData?.statistics.gamesWon ?? 0}',
                       style: TextStyle(color: Colors.green, fontSize: 16),
                     ),
                     SizedBox(height: 8),
@@ -272,11 +261,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       'Games Lost: $gamesLost',
                       style: TextStyle(color: Colors.red, fontSize: 16),
                     ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Current Streak: ${userData?.statistics.currentStreak ?? 0}',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Best Streak: ${userData?.statistics.bestStreak ?? 0}',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Total Time Played: ${_formatPlayTime(userData?.statistics.totalTimePlayed ?? 0)}',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Total Turns Played: ${userData?.statistics.totalTurnsPlayed ?? 0}',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ],
                 ),
               ),
               SizedBox(height: 24),
-              if (lastFiveGames.isNotEmpty) ...[
+              if ((userData?.statistics.lastFiveGames.length ?? 0) > 0) ...[
                 Text(
                   'Recent Games',
                   style: TextStyle(
@@ -292,19 +301,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
-                    children: lastFiveGames
+                    children: userData?.statistics.lastFiveGames
                         .map((game) => ListTile(
                       leading: Icon(
-                        game['result'] == 'Win' ? Icons.check_circle : Icons.cancel,
-                        color: game['result'] == 'Win' ? Colors.green : Colors.red,
+                        game.isWinner ? Icons.check_circle : Icons.cancel,
+                        color: game.isWinner ? Colors.green : Colors.red,
                         size: 28,
                       ),
                       title: Text(
-                        '${game['result']}',
+                        '${game.isWinner ? 'Win' : 'Loss'} - ${_formatDate(game.gameDate)}',
                         style: TextStyle(color: Colors.white),
                       ),
+                      subtitle: Text(
+                        'Lobby: ${game.lobbyId}',
+                        style: TextStyle(color: Colors.white70),
+                      ),
                     ))
-                        .toList(),
+                        .toList() ?? [],
                   ),
                 ),
               ],
@@ -314,9 +327,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
     );
   }
-}
 
-// Helper function to get minimum value
-int min(int a, int b) {
-  return a < b ? a : b;
+  // Función para formatear el tiempo de juego
+  String _formatPlayTime(int seconds) {
+    if (seconds < 60) {
+      return '$seconds seconds';
+    } else if (seconds < 3600) {
+      int minutes = seconds ~/ 60;
+      return '$minutes ${minutes == 1 ? 'minute' : 'minutes'}';
+    } else {
+      int hours = seconds ~/ 3600;
+      int remainingMinutes = (seconds % 3600) ~/ 60;
+      return '$hours ${hours == 1 ? 'hour' : 'hours'} $remainingMinutes ${remainingMinutes == 1 ? 'minute' : 'minutes'}';
+    }
+  }
+
+  // Función para formatear la fecha
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
 }
