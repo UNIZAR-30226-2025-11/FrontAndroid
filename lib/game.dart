@@ -52,6 +52,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   List<Map<String, dynamic>> animatingCards = [];
   bool isAnimating = false;
 
+  // to prevent bomb explosions' animations from being cut off
+  bool _isBombAnimating = false;
+  BackendWinnerJSON? _pendingWinner;
+
+
   final myId = 1;
 
   @override
@@ -219,6 +224,41 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       });
     }
 
+    void _showWinnerDialog(BackendWinnerJSON winnerData) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('¡We have a winner!'),
+            content: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${winnerData.winnerUsername} ',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                  ),
+                  TextSpan(text: 'has won '),
+                  TextSpan(
+                    text: 'and you have won ${winnerData.coinsEarned} coins',
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text('Close'),
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => MainScreen()),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
 
     void accion(dynamic action) {
       String targetName = action['targetUser'];
@@ -234,19 +274,38 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           );
           break;
         case("BombExploded"):
+          _isBombAnimating = true;
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (_) => BombExplosionDialog(
               eliminatedPlayer: triggerName,
             ),
-          );
+          ).then((_) {
+            // Animation finished
+            _isBombAnimating = false;
+
+            // If a winner was waiting, show it now
+            if (_pendingWinner != null) {
+              _showWinnerDialog(_pendingWinner!);
+              _pendingWinner = null;
+            }
+          });
           break;
         case("BombDefused"):
           showDialog(
             context: context,
             builder: (_) => BombDiffusedDialog(player: triggerName),
           );
+          break;
+        case("FutureSeen"):
+          if (triggerName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => FutureSeenDialog(player: triggerName),
+            );
+          }
+          break;
       }
       showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
     }
@@ -258,61 +317,18 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       });
     });
 
-    void winner(BackendWinnerJSON winnerData) {
-      if (winnerData.error) {
-        print('Error: ${winnerData.errorMsg}');
-      } else {
-        print(
-            'Jugador ${winnerData
-                .winnerUsername} ha ganado y ha ganado ${winnerData
-                .coinsEarned} coins');
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('¡We have a winner!'),
-              content: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: '${winnerData.winnerUsername} ',
-                      style: TextStyle(fontWeight: FontWeight.bold,color: Colors.green),
-                    ),
-                    TextSpan(text: 'has won '),
-                    TextSpan(
-                      text: 'and you have won ${winnerData.coinsEarned} coins',
-                      //style: TextStyle(color: Colors.green),
-                    ),
-                  ],
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: Text('Close'),
-                  onPressed: () {
-                    //Navigator.of(context).pop();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => MainScreen(
-
-                          )), // Placeholder
-                    );
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      }
-    }
 
     socket.on('winner', (data) {
       setState(() {
         BackendWinnerJSON winnerData = BackendWinnerJSON.fromJson(data);
-        winner(winnerData);
+        if (_isBombAnimating) {
+          _pendingWinner = winnerData;
+        } else {
+          _showWinnerDialog(winnerData);
+        }
       });
     });
+
 
     socket.on('game-select-player', (data) {
       print('select-game-player recibido');
@@ -370,80 +386,99 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         BackendGameSelectCardJSON.fromJson(data);
         int timeLeft = selectCardData.timeOut;
 
-        // Show dialog to select a card
         showDialog(
           context: context,
-          barrierDismissible: false, // Prevent dismissing by tapping outside
+          barrierDismissible: false,
           builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Select a Card'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Time left: $timeLeft seconds'),
-                  SizedBox(height: 10),
-                  // Create a grid of cards to select from
-                  GridView.builder(
-                    shrinkWrap: true,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.7,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: playerCards.length,
-                    itemBuilder: (context, index) {
-                      CardJSON card = playerCards[index];
-                      String imagePath = 'assets/images/${card.type}.jpg';
-
-                      return GestureDetector(
-                        onTap: () {
-                          // Send selected card back to the server
-                          FrontendGameSelectCardResponseJSON response =
-                          FrontendGameSelectCardResponseJSON(
-                            error: false,
-                            errorMsg: "",
-                            card: card,
-                            lobbyId: widget.lobbyId,
-                          );
-                          socket.emit('game-select-card', response.toJson());
-
-                          // Close the dialog
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey),
-                          ),
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(10)),
-                                  child: Image.asset(
-                                    imagePath,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  card.type,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                width: 300, // You can adjust this width as needed
+                height: 450, // And the height too
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Select a Card',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Time left: $timeLeft seconds',
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Expanded(
+                      child: GridView.builder(
+                        itemCount: playerCards.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemBuilder: (context, index) {
+                          CardJSON card = playerCards[index];
+                          String imagePath = 'assets/images/${card.type}.jpg';
+
+                          return GestureDetector(
+                            onTap: () {
+                              FrontendGameSelectCardResponseJSON response =
+                              FrontendGameSelectCardResponseJSON(
+                                error: false,
+                                errorMsg: "",
+                                card: card,
+                                lobbyId: widget.lobbyId,
+                              );
+                              socket.emit('game-select-card', response.toJson());
+                              Navigator.of(context).pop();
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey),
+                              ),
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(10),
+                                      ),
+                                      child: Image.asset(
+                                        imagePath,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      card.type,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -458,89 +493,99 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         BackendGameSelectCardTypeJSON.fromJson(data);
         int timeLeft = selectCardTypeData.timeOut;
 
-        // Show dialog to select a card type
         showDialog(
           context: context,
-          barrierDismissible: false, // Prevent dismissing by tapping outside
+          barrierDismissible: false,
           builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Select a Card Type'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Time left: $timeLeft seconds'),
-                  SizedBox(height: 10),
-                  // Create a grid of card types to select from
-                  GridView.builder(
-                    shrinkWrap: true,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 1.0,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: CardType.values.length,
-                    itemBuilder: (context, index) {
-                      CardType cardType = CardType.values[index];
-                      String imagePath =
-                          'assets/images/${cardType
-                          .toString()
-                          .split('.')
-                          .last}.jpg';
-
-                      return GestureDetector(
-                        onTap: () {
-                          // Send selected card type back to the server
-                          FrontendGameSelectCardTypeResponseJSON response =
-                          FrontendGameSelectCardTypeResponseJSON(
-                            error: false,
-                            errorMsg: "",
-                            cardType: cardType
-                                .toString()
-                                .split('.')
-                                .last, // Send just the type name
-                            lobbyId: widget.lobbyId,
-                          );
-                          socket.emit(
-                              'game-select-card-type', response.toJson());
-
-                          // Close the dialog
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                imagePath,
-                                height: 80,
-                                width: 80,
-                                fit: BoxFit.contain,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                cardType
-                                    .toString()
-                                    .split('.')
-                                    .last, // Display type name
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                width: 300,
+                height: 450,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Select a Card Type',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Time left: $timeLeft seconds',
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Expanded(
+                      child: GridView.builder(
+                        itemCount: CardType.values.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 1.0,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemBuilder: (context, index) {
+                          CardType cardType = CardType.values[index];
+                          String typeName =
+                              cardType.toString().split('.').last;
+                          String imagePath = 'assets/images/$typeName.jpg';
+
+                          return GestureDetector(
+                            onTap: () {
+                              FrontendGameSelectCardTypeResponseJSON response =
+                              FrontendGameSelectCardTypeResponseJSON(
+                                error: false,
+                                errorMsg: "",
+                                cardType: typeName,
+                                lobbyId: widget.lobbyId,
+                              );
+                              socket.emit('game-select-card-type', response.toJson());
+
+                              Navigator.of(context).pop();
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    imagePath,
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    typeName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -548,12 +593,30 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       });
     });
 
+
     socket.on('game-select-nope', (data) {
       setState(() {
         BackendGameSelectNopeJSON nopeData = BackendGameSelectNopeJSON.fromJson(data);
         int timeLeft = nopeData.timeOut;
+        bool hasNopeCard = playerCards.any((card) => card.type == 'Nope'); // This should be based on the player's actual card availability
 
-        // Show dialog to ask if player wants to use a Nope card
+        // Check if the player has a Nope card
+        if (!hasNopeCard) {
+          // Print and emit response for not using the Nope card
+          print('Player does not have a Nope card.');
+
+          // Emit that the player doesn't want to use the Nope card
+          FrontendGameSelectNopeResponseJSON response = FrontendGameSelectNopeResponseJSON(
+            error: false,
+            errorMsg: "",
+            useNope: false,
+            lobbyId: widget.lobbyId,
+          );
+          socket.emit('game-select-nope', response.toJson());
+          return; // Exit the function since we don't need to show the dialog
+        }
+
+        // If the player has a Nope card, show the dialog
         showDialog(
           context: context,
           barrierDismissible: false, // Prevent dismissing by tapping outside
@@ -614,6 +677,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         );
       });
     });
+
     socket.on('game-played-cards', (data) {
       print("respuesta a cartas recibida");
       print("Raw data: $data");
@@ -1682,6 +1746,25 @@ class BombDiffusedDialog extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class FutureSeenDialog extends StatelessWidget {
+  final String player;
+
+  FutureSeenDialog({required this.player});
+
+  @override
+  Widget build(BuildContext context) {
+    // Close the dialog after 1 second
+    Future.delayed(Duration(seconds: 1), () {
+      Navigator.of(context).pop();
+    });
+
+    return AlertDialog(
+      title: Text('Future Seen'),
+      content: Text('$player has seen the future!'),
     );
   }
 }
