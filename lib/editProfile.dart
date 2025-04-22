@@ -81,6 +81,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    try {
+      final String? token = await SessionManager.getSessionData();
+      final response = await http.delete(
+        Uri.parse('http://10.0.2.2:8000/user'),
+        headers: {
+          'Cookie': 'access_token=$token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('delete ok');
+        SessionManager.removeSessionData();
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen())
+        );
+      } else {
+        print('delete not ok');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+
+
   void _confirmDeleteAccount() {
     showDialog(
       context: context,
@@ -97,6 +126,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                _deleteAccount();
                 print("Account deleted");
               },
               child: Text("Delete", style: TextStyle(color: Colors.red)),

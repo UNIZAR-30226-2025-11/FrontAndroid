@@ -1064,7 +1064,6 @@ class StatisticsJSON {
     'lastFiveGames': lastFiveGames.map((game) => game.toJson()).toList(),
   };
 
-  // Método auxiliar para agregar un nuevo registro
   void addGameRecord(RecordJSON record) {
     lastFiveGames.add(record);
     if (lastFiveGames.length > 5) {

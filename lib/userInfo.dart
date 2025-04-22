@@ -56,7 +56,6 @@ class UserInfo {
     _context = context;
   }
 
-  // Método para obtener datos del usuario
   Future<void> fetchUserData() async {
     setIsLoading(true);
 
