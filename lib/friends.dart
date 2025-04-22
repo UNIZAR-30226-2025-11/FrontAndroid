@@ -464,27 +464,35 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
     try {
       final String? token = await SessionManager.getSessionData();
-      final response = await http.get(Uri.parse('$baseUrl/users/search?query=$query'),
+      final response = await http.get(Uri.parse('$baseUrl/users'), // sin query aquí
           headers: {
             'Cookie': 'access_token=$token',
           });
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final allUsers = (data['users'] as List)
+            .where((user) => user['status'] == 'none')
+            .map((user) => Friend(
+          username: user['username'],
+          avatar: user['avatar'],
+          status: user['status'],
+        ))
+            .toList();
+
+        // ahora filtramos por el query localmente
+        final filteredUsers = allUsers
+            .where((user) =>
+            user.username.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+
         setState(() {
-          users = (data['users'] as List)
-              .where((user) => user['status'] == 'none')
-              .map((user) => Friend(
-            username: user['username'],
-            avatar: user['avatar'],
-            status: user['status']
-          ))
-              .toList();
+          users = filteredUsers;
           isSearching = false;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to search users')),
+          SnackBar(content: Text('Failed to fetch users')),
         );
         setState(() {
           isSearching = false;
@@ -499,6 +507,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       });
     }
   }
+
 
   Future<void> sendFriendRequest(String username) async {
     try {
@@ -603,7 +612,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: AssetImage('assets/images/avatares/${user.avatar}.png'),
+                        backgroundImage: AssetImage('assets/images/avatar/${user.avatar}.png'),
                         backgroundColor: Colors.white.withOpacity(0.3),
                         onBackgroundImageError: (exception, stackTrace) {
                           print('Error cargando imagen de avatar: $exception');
@@ -779,7 +788,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: AssetImage('assets/images/avatares/${user.avatar}.png'),
+                        backgroundImage: AssetImage('assets/images/avatar/${user.avatar}.png'),
                         backgroundColor: Colors.white.withOpacity(0.3),
                         onBackgroundImageError: (exception, stackTrace) {
                           print('Error cargando imagen de avatar: $exception');

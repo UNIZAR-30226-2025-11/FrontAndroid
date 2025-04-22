@@ -7,12 +7,14 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_example/lobbyLeader.dart';
 import 'package:flutter_example/statistics.dart';
 import 'SessionManager.dart';
+import 'UserInfo.dart';
 import 'editProfile.dart';
 import 'friends.dart';
 import 'game.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'joinGame.dart';
 import 'login.dart';
+import 'customize.dart';
 
 class MainScreen extends StatefulWidget {
   MainScreen();
@@ -23,71 +25,18 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late IO.Socket socket;
-  late Future<String?> _usernameFuture;
-  String username = ""; // Valor predeterminado
-  int coins=-1;
+  late Future<void> _initFuture;
+  final UserInfo userInfo = UserInfo();
 
   @override
   void initState() {
     super.initState();
-    _usernameFuture = _initializeUsername();
-    _initializeSocket();
-    _initializeCoins();
+    _initFuture = _initialize();
   }
 
-  Future<String?> _initializeUsername() async {
-    try {
-      final String? user = await SessionManager.getUsername();
-      setState(() {
-        username = user ?? ""; // Actualiza el username cuando esté disponible
-
-      });
-      return user;
-    } catch (e) {
-      print("Error initializing username: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Username error: $e"))
-      );
-      return "";
-    }
-  }
-
-  Future<void> _initializeCoins() async {
-    try {
-      final String? token = await SessionManager.getSessionData();
-      final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
-          headers: {
-            'Cookie': 'access_token=$token',
-          }
-      );
-
-      print('Current username: $username');
-      final data = jsonDecode(res.body);
-
-      if (res.statusCode != 200) {
-        var errorMessage = data.containsKey('message')
-            ? data['message']
-            : "Something went wrong. Try later";
-
-        print(errorMessage);
-        return;
-      } else {
-
-          // Use setState to update the UI
-        setState(() {
-          coins = int.parse(data['coins'].toString());
-        });
-        print("Found user, coins: $coins");
-      }
-    } catch (e) {
-      print("Error initializing coins: $e");
-      if (mounted) {  // Check if widget is still mounted
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Coins error: $e"))
-        );
-      }
-    }
+  Future<void> _initialize() async {
+    await userInfo.initialize();
+    await _initializeSocket();
   }
 
   Future<void> _initializeSocket() async {
@@ -98,10 +47,12 @@ class _MainScreenState extends State<MainScreen> {
       if (token == null || token.isEmpty) {
         print("Warning: Token is null or empty");
         // Handle missing token - perhaps redirect to login
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => LoginScreen())
-        );
+        if (mounted) {
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => LoginScreen())
+          );
+        }
         return;
       }
 
@@ -114,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
               .setExtraHeaders({
             'Cookie': 'access_token=$token'
           })
-              //.enableForceNew()
+          //.enableForceNew()
               .disableAutoConnect()
               .build());
 
@@ -122,9 +73,11 @@ class _MainScreenState extends State<MainScreen> {
       socket.onConnectError((error) {
         print("Socket connection error: $error");
         // Handle connection error
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Connection error: Unable to authenticate"))
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Connection error: Unable to authenticate"))
+          );
+        }
       });
 
       socket.connect();
@@ -133,9 +86,11 @@ class _MainScreenState extends State<MainScreen> {
       _setupSocketListeners();
     } catch (e) {
       print("Error initializing socket: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Authentication error: $e"))
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Authentication error: $e"))
+        );
+      }
     }
   }
 
@@ -150,7 +105,7 @@ class _MainScreenState extends State<MainScreen> {
             builder: (context) => StartGameScreen(
               socket: socket,
               lobbyId: lobbyId,
-              username: username,
+              username: userInfo.username,
             ),
           ),
         );
@@ -293,9 +248,45 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Profile Settings",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userInfo.username,
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                          SizedBox(width: 4),
+                          Text("${userInfo.coins}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(height: 30),
               ListTile(
                 leading: Icon(Icons.bar_chart),
                 title: Text("Statistics"),
@@ -304,12 +295,11 @@ class _MainScreenState extends State<MainScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) =>StatisticsScreen(
-                          username: username,
+                          username: userInfo.username,
                         )),
                   );
                 },
               ),
-              SizedBox(height: 20),
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text("Edit profile"),
@@ -318,37 +308,54 @@ class _MainScreenState extends State<MainScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => EditProfileScreen(
-                          username: username,
+                          username: userInfo.username,
                         )),
                   );
                 },
               ),
-              SizedBox(height: 20),
               ListTile(
-                leading: Icon(Icons.logout),
-                title: Text("Logout"),
-                onTap:(){ _showLogOutBar();
-                  //SessionManager.removeSessionData();
-                  /*Navigator.pushReplacement(
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
-                  );*/
-                  }
-
+                        builder: (context) => CustomizeScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
               ),
-              SizedBox(height: 20),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => shop.ShopScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
               ListTile(
                   leading: Icon(Icons.people),
                   title: Text("Friends"),
                   onTap:(){
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => FriendsScreen()),
-                  );
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => FriendsScreen()),
+                    );
                   }
-
+              ),
+              ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text("Logout"),
+                  onTap: () {
+                    _showLogOutBar();
+                  }
               ),
             ],
           ),
@@ -359,8 +366,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: _usernameFuture,
+    return FutureBuilder<void>(
+      future: _initFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -376,7 +383,7 @@ class _MainScreenState extends State<MainScreen> {
           );
         } else {
           // Si el username está vacío y no hay error, probablemente falló la inicialización
-          if (username.isEmpty && !snapshot.hasError) {
+          if (userInfo.username.isEmpty && !snapshot.hasError) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushReplacement(
                 context,
@@ -387,79 +394,96 @@ class _MainScreenState extends State<MainScreen> {
 
           return Scaffold(
             backgroundColor: Color(0xFF9D0514),
-            body: Stack(
-              children: [
-                Positioned(
-                  top: 48,
-                  right: 30,
-                  child: Row(
-                    children: [
-                      SizedBox(width: 8),
-                      Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                      SizedBox(width: 8),
-                      Text('$coins',
-                          style: TextStyle(color: Colors.white, fontSize: 18)),
-                    ],
-                  ),
+            body: Container(
+              decoration: userInfo.backgroundUrl.isNotEmpty
+                  ? BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+                  fit: BoxFit.cover,
+                  opacity: 0.5,
                 ),
-                Positioned(
-                  top: 40,
-                  left: 30,
-                  child: Row(
-                    children: [
-                      SizedBox(width: 8),
-                      IconButton(
-                        icon: Icon(Icons.person,
-                            size: 30, color: Colors.white), // Botón de perfil
-                        onPressed: _openProfileDrawer,
-                      ),
-                      SizedBox(width: 8),
-                      Text(username,
-                          style: TextStyle(color: Colors.white, fontSize: 18)),
-                    ],
+              )
+                  : null,
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 48,
+                    right: 30,
+                    child: Row(
+                      children: [
+                        SizedBox(width: 8),
+                        Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+                        SizedBox(width: 8),
+                        Text('${userInfo.coins}',
+                            style: TextStyle(color: Colors.white, fontSize: 18)),
+                      ],
+                    ),
                   ),
-                ),
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () async {
-                          // Se ejecuta cuando se crea una nueva sala
-                          int? players = await _showPlayerSelectionDialog(context);
-                        },
-                        child: Text("New Lobby"),
-                      ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => JoinGameScreen(
-                                  socket: socket,
-                                )),
-                          );
-                        },
-                        child: Text("Join Lobby"),
-                      ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => shop.ShopScreen(
-                                  username: username,
-                                )),
-                          );
-                        },
-                        child: Text("Shop"),
-                      ),
-                    ],
+                  Positioned(
+                    top: 40,
+                    left: 30,
+                    child: Row(
+                      children: [
+                        SizedBox(width: 8),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.2),
+                            image: userInfo.avatarUrl.isNotEmpty
+                                ? DecorationImage(
+                              image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                              fit: BoxFit.cover,
+                            )
+                                : null,
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: _openProfileDrawer,
+                              child: userInfo.avatarUrl.isEmpty
+                                  ? Icon(Icons.person, color: Colors.white)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(userInfo.username,
+                            style: TextStyle(color: Colors.white, fontSize: 18)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            // Se ejecuta cuando se crea una nueva sala
+                            int? players = await _showPlayerSelectionDialog(context);
+                          },
+                          child: Text("New Lobby"),
+                        ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => JoinGameScreen(
+                                    socket: socket,
+                                  )),
+                            );
+                          },
+                          child: Text("Join Lobby"),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }

@@ -1,79 +1,63 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
 import 'SessionManager.dart';
-import 'models/models.dart';
-
-
 
 class UserInfo {
-  String _username = '';
-  int _coins = 0;
-  bool _isLoading = false;
-  UserPersonalizeData _personalizeData = UserPersonalizeData();
-  BuildContext? _context;
+  // Singleton instance
+  static final UserInfo _instance = UserInfo._internal();
 
-  // Constructor
-  UserInfo({BuildContext? context}) {
-    _context = context;
-  }
+  // Factory constructor returns the singleton instance
+  factory UserInfo() => _instance;
+
+  // Private constructor for singleton pattern
+  UserInfo._internal();
+
+  // User data
+  String _username = "";
+  int _coins = 0;
+  String _avatar = "";
+  String _background = "";
+  String _avatarUrl = "";
+  String _backgroundUrl = "";
+  Map<String, dynamic> _statistics = {};
+  List<dynamic> _ownedProducts = [];
 
   // Getters
-  String getUsername() => _username;
-  int getCoins() => _coins;
-  bool getIsLoading() => _isLoading;
-  UserPersonalizeData getPersonalizeData() => _personalizeData;
-  String getAvatar() => _personalizeData.avatar;
-  String getBackground() => _personalizeData.background;
+  String get username => _username;
+  int get coins => _coins;
+  String get avatar => _avatar;
+  String get background => _background;
+  String get avatarUrl => _avatarUrl;
+  String get backgroundUrl => _backgroundUrl;
+  Map<String, dynamic> get statistics => _statistics;
+  List<dynamic> get ownedProducts => _ownedProducts;
 
-  // Setters
-  void setUsername(String value) {
-    _username = value;
+  // Initialize user data
+  Future<void> initialize() async {
+    await _fetchUsername();
+    await _fetchUserData();
+    await _fetchOwnedProducts();
   }
 
-  void setCoins(int value) {
-    _coins = value;
-  }
-
-  void setIsLoading(bool value) {
-    _isLoading = value;
-  }
-
-  void setPersonalizeData(UserPersonalizeData value) {
-    _personalizeData = value;
-  }
-
-  void setAvatar(String value) {
-    _personalizeData.avatar = value;
-  }
-
-  void setBackground(String value) {
-    _personalizeData.background = value;
-  }
-
-  void setContext(BuildContext context) {
-    _context = context;
-  }
-
-  Future<void> fetchUserData() async {
-    setIsLoading(true);
-
+  // Fetch username from session
+  Future<void> _fetchUsername() async {
     try {
-      // First ensure we have the username
-      if (_username.isEmpty) {
-        final String? user = await SessionManager.getUsername();
-        if (user != null && user.isNotEmpty) {
-          _username = user;
-        } else {
-          throw Exception("Username not available");
-        }
+      final String? user = await SessionManager.getUsername();
+      if (user != null && user.isNotEmpty) {
+        _username = user;
       }
+    } catch (e) {
+      print("Error fetching username: $e");
+    }
+  }
 
-      // Then fetch the user data
+  // Fetch user data including coins, avatar, background
+  Future<void> _fetchUserData() async {
+    try {
       final String? token = await SessionManager.getSessionData();
       if (token == null || token.isEmpty) {
-        throw Exception("Authentication token not available");
+        print("Error: Invalid session token");
+        return;
       }
 
       final res = await http.get(
@@ -83,71 +67,140 @@ class UserInfo {
           }
       );
 
-      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
 
-      if (res.statusCode != 200) {
-        var errorMessage = data.containsKey('message')
-            ? data['message']
-            : "Server error: ${res.statusCode}";
-        throw Exception(errorMessage);
+        _coins = data['coins'] is int ? data['coins'] : int.parse(data['coins'].toString());
+        if (data.containsKey('userPersonalizeData')) {
+          final personalizeData = data['userPersonalizeData'];
+          _avatarUrl = personalizeData['avatar'] ?? "";
+          _backgroundUrl = personalizeData['background'] ?? "";
+        }
+
+        print("User data loaded: coins=$_coins, avatar=$_avatar, background=$_background");
+      } else {
+        print("Error fetching user data: ${res.statusCode}");
       }
-
-      // Actualizar valores
-      setCoins(int.parse(data['coins'].toString()));
-
-      // Actualizar datos de personalización si están disponibles
-      if (data.containsKey('personalizeData')) {
-        setPersonalizeData(UserPersonalizeData.fromJson(data['personalizeData']));
-      }
-
-      setIsLoading(false);
     } catch (e) {
-      setIsLoading(false);
-      if (_context != null) {
-        ScaffoldMessenger.of(_context!).showSnackBar(
-          SnackBar(content: Text('Error fetching user data: ${e.toString()}')),
-        );
-      }
+      print("Error fetching user data: $e");
     }
   }
 
-  // TODO: revisar cuando exista API
-  Future<bool> updatePersonalizeData() async {
-    setIsLoading(true);
-
+  // Fetch owned products including avatar and background URLs
+  Future<void> _fetchOwnedProducts() async {
     try {
       final String? token = await SessionManager.getSessionData();
       if (token == null || token.isEmpty) {
-        throw Exception("Authentication token not available");
+        print("Error: Invalid session token");
+        return;
       }
 
-      final res = await http.post(
-        Uri.parse('http://10.0.2.2:8000/user/personalize'),
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8000/shop/owned'),
+        headers: {
+          'Cookie': 'access_token=$token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _ownedProducts = data['products'] ?? [];
+
+        // Find URLs for current avatar and background
+        _updateCustomizationUrls();
+      } else {
+        print("Error fetching owned products: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching owned products: $e");
+    }
+  }
+
+  // Update avatar and background URLs based on their names
+  void _updateCustomizationUrls() {
+    // Find avatar URL
+    if (_avatar.isNotEmpty) {
+      final avatarProduct = _ownedProducts.firstWhere(
+            (product) =>
+        product['categoryName'].toString().toLowerCase() == 'avatar' &&
+            product['productName'] == _avatar,
+        orElse: () => null,
+      );
+
+      if (avatarProduct != null && avatarProduct.containsKey('productUrl')) {
+        _avatarUrl = avatarProduct['productUrl'] ?? "";
+      }
+    }
+
+    // Find background URL
+    if (_background.isNotEmpty) {
+      final backgroundProduct = _ownedProducts.firstWhere(
+            (product) =>
+        product['categoryName'].toString().toLowerCase() == 'background' &&
+            product['productName'] == _background,
+        orElse: () => null,
+      );
+
+      if (backgroundProduct != null && backgroundProduct.containsKey('productUrl')) {
+        _backgroundUrl = backgroundProduct['productUrl'] ?? "";
+      }
+    }
+
+    print("Updated URLs: avatarUrl=$_avatarUrl, backgroundUrl=$_backgroundUrl");
+  }
+
+  // Update customization (avatar or background)
+  Future<bool> updateCustomization(String categoryName, String productName) async {
+    try {
+      final String? token = await SessionManager.getSessionData();
+      if (token == null || token.isEmpty) {
+        print("Error: Invalid session token");
+        return false;
+      }
+
+      final response = await http.put(
+        Uri.parse('http://10.0.2.2:8000/shop/owned'),
         headers: {
           'Cookie': 'access_token=$token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode(_personalizeData.toJson()),
+        body: jsonEncode({
+          'resp': {
+            'categoryName': categoryName,
+            'productName': productName,
+          }
+        }),
       );
 
-      if (res.statusCode != 200) {
-        final data = jsonDecode(res.body);
-        var errorMessage = data.containsKey('message')
-            ? data['message']
-            : "Server error: ${res.statusCode}";
-        throw Exception(errorMessage);
-      }
+      if (response.statusCode == 200) {
+        // Update local data
+        if (categoryName.toLowerCase() == 'avatar') {
+          _avatar = productName;
+        } else if (categoryName.toLowerCase() == 'background') {
+          _background = productName;
+        }
 
-      setIsLoading(false);
-      return true;
-    } catch (e) {
-      setIsLoading(false);
-      if (_context != null) {
-        ScaffoldMessenger.of(_context!).showSnackBar(
-          SnackBar(content: Text('Error updating personalize data: ${e.toString()}')),
-        );
+        // Update URLs
+        _updateCustomizationUrls();
+        return true;
+      } else {
+        print("Error updating customization: ${response.statusCode}");
+        return false;
       }
+    } catch (e) {
+      print("Error updating customization: $e");
       return false;
     }
+  }
+
+  // Update coins (after purchase or earning)
+  void updateCoins(int newCoins) {
+    _coins = newCoins;
+  }
+
+  // Refresh all user data
+  Future<void> refreshData() async {
+    await _fetchUserData();
+    await _fetchOwnedProducts();
   }
 }
