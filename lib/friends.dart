@@ -102,22 +102,37 @@ class _FriendsScreenState extends State<FriendsScreen> {
       isLoading = true;
     });
 
+
     try {
-      final response = await http.get(Uri.parse('$baseUrl/friends'));
+      final String? token = await SessionManager.getSessionData();
+      if (token == null || token.isEmpty) {
+        throw Exception("Authentication token not available");
+      }
+      final response = await http.get(
+          Uri.parse('$baseUrl/friends'),
+          headers: {
+          'Cookie': 'access_token=$token',
+          }
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print(data);
         setState(() {
           friends = (data['users'] as List)
-              .map((user) => Friend(
-            username: user['username'],
-            avatar: user['avatar'],
-          ))
+              .where((user) => user['status'] == 'friend')
+              .map((user) =>
+              Friend(
+                username: user['username'],
+                avatar: user['avatar'],
+                status: user['status'],
+              ))
               .toList();
-          pendingRequests = data['num-requests'];
+                  pendingRequests = data['numRequests'];
           isLoading = false;
         });
       } else {
+        print(response.statusCode);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load friends')),
         );
@@ -137,10 +152,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   Future<void> deleteFriend(String username) async {
     try {
+      final String? token = await SessionManager.getSessionData();
+      if (token == null || token.isEmpty) {
+        throw Exception("Authentication token not available");
+      }
       final response = await http.delete(
         Uri.parse('$baseUrl/friends'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username}),
+        headers: {'Content-Type': 'application/json',
+          'Cookie': 'access_token=$token',},
+        body: jsonEncode({'resp': {
+          'username': username
+        }
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -383,21 +406,78 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   List<Friend> users = [];
   bool isSearching = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Load users automatically when screen opens
+    searchUsersInit();
+  }
+
+  Future<void> searchUsersInit() async {
+    setState(() {
+    });
+
+    try {
+      final String? token = await SessionManager.getSessionData();
+      final String? currentUsername = await SessionManager.getUsername();
+
+      final response = await http.get(
+          Uri.parse('$baseUrl/users'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          }
+      );
+
+      if (response.statusCode == 200) {
+        print(response.body);
+        final List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          users = data
+              .where((user) => user['username'] != currentUsername)
+              .where((user) => user['status'] == 'none')
+              .map((user) => Friend(
+            username: user['username'],
+            avatar: user['avatar'],
+            status: user['status']
+          ))
+              .toList();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to search users')),
+        );
+      }
+    } catch (e) {
+      print('Error in searchUsersInit: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
+
+
   Future<void> searchUsers(String query) async {
     setState(() {
       isSearching = true;
     });
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/users/search?query=$query'));
+      final String? token = await SessionManager.getSessionData();
+      final response = await http.get(Uri.parse('$baseUrl/users/search?query=$query'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          });
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           users = (data['users'] as List)
+              .where((user) => user['status'] == 'none')
               .map((user) => Friend(
             username: user['username'],
             avatar: user['avatar'],
+            status: user['status']
           ))
               .toList();
           isSearching = false;
@@ -422,10 +502,18 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
   Future<void> sendFriendRequest(String username) async {
     try {
+      final String? token = await SessionManager.getSessionData();
       final response = await http.post(
         Uri.parse('$baseUrl/friends'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username}),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'access_token=$token',
+        },
+        body: jsonEncode({
+          'resp': {
+            'username': username
+          }
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -574,20 +662,28 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     });
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/friends/requests'));
+      final String? token = await SessionManager.getSessionData();
+      final response = await http.get(Uri.parse('$baseUrl/friends/request'),
+          headers: {
+            'Cookie': 'access_token=$token',
+          }
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           requestUsers = (data['users'] as List)
+              .where((user) => user['status'] == 'pending')
               .map((user) => Friend(
             username: user['username'],
             avatar: user['avatar'],
+            status: user['status'],
           ))
               .toList();
           isLoading = false;
         });
       } else {
+        print(response.statusCode);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load friend requests')),
         );
@@ -607,10 +703,18 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
   Future<void> respondToRequest(String username, bool accept) async {
     try {
+      final String? token = await SessionManager.getSessionData();
       final response = await http.post(
-        Uri.parse('$baseUrl/friends/requests'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'accept': accept}),
+        Uri.parse('$baseUrl/friends/request'),
+        headers: {'Content-Type': 'application/json',
+          'Cookie': 'access_token=$token',},
+        body: jsonEncode(
+            {
+              'resp': {
+                'username': username,
+                'accept': accept}
+            }
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -622,6 +726,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
             content: Text(accept ? 'Friend request accepted' : 'Friend request rejected'),
           ),
         );
+        fetchRequests();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to respond to friend request')),
@@ -724,5 +829,5 @@ class Friend {
   final String username;
   final String avatar;
 
-  Friend({required this.username, required this.avatar});
+  Friend({required this.username, required this.avatar, required status});
 }

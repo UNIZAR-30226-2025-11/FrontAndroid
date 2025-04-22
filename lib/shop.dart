@@ -85,6 +85,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> fetchShopItems() async {
     try {
       final String? token = await SessionManager.getSessionData();
+      print(token);
       if (token == null || token.isEmpty) {
         throw Exception("Authentication token not available");
       }
@@ -109,12 +110,14 @@ class _ShopScreenState extends State<ShopScreen> {
               name: product['name'],
               price: product['price'],
               isBought: product['isBought'],
+              url: product['url'],
             ));
           }
 
           fetchedCategories.add(ShopCategory(
             name: category['name'],
             products: products,
+            url: category['url']
           ));
         }
 
@@ -148,7 +151,8 @@ class _ShopScreenState extends State<ShopScreen> {
       if (token == null || token.isEmpty) {
         throw Exception("Authentication token not available");
       }
-
+      print(categoryName);
+      print(productName);
       final res = await http.post(
         Uri.parse('http://10.0.2.2:8000/shop'),
         headers: {
@@ -156,11 +160,13 @@ class _ShopScreenState extends State<ShopScreen> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'category-name': categoryName,
-          'product-name': productName,
+        'resp': {
+          'categoryName': categoryName,
+          'productName': productName,
+        }
         }),
       );
-
+      print(res.body);
       if (res.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Item purchased successfully!')),
@@ -316,10 +322,11 @@ class _ShopScreenState extends State<ShopScreen> {
                     String imagePath;
                     if (category.name.toLowerCase().contains('avatar')) {
                       imagePath =
-                      'assets/images/avatares/${product.name}.png';
+                      'assets/images/avatar/${product.url}.png';
+                      print(imagePath);
                     } else {
                       imagePath =
-                      'assets/images/backgrounds/${product.name}.png';
+                      'assets/images/background/${product.url}.png';
                     }
 
                     return ShopItemCard(
@@ -327,7 +334,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       price: product.price,
                       imagePath: imagePath,
                       isBought: product.isBought,
-                      onBuy: () => buyItem(category.name, product.name),
+                      onBuy: () => buyItem(category.url, product.url),
                     );
                   },
                 ),
@@ -343,10 +350,12 @@ class _ShopScreenState extends State<ShopScreen> {
 
 class ShopCategory {
   final String name;
+  final String url;
   final List<ShopProduct> products;
 
   ShopCategory({
     required this.name,
+    required this.url,
     required this.products,
   });
 }
@@ -355,11 +364,13 @@ class ShopProduct {
   final String name;
   final int price;
   final bool isBought;
+  final String url;
 
   ShopProduct({
     required this.name,
     required this.price,
     required this.isBought,
+    required this.url,
   });
 }
 
@@ -394,14 +405,6 @@ class ShopItemCard extends StatelessWidget {
             child: Image.asset(
               imagePath,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey[300],
-                  child: const Center(
-                    child: Icon(Icons.image_not_supported, size: 40),
-                  ),
-                );
-              },
             ),
           ),
           Padding(

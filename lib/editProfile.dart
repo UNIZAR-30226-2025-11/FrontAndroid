@@ -1,4 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+
+import 'SessionManager.dart';
+import 'package:http/http.dart' as http;
+
+import 'login.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -38,12 +45,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  void _changePassword() {
+  Future<void> _changePassword() async {
     if (newPasswordController.text != confirmPasswordController.text) {
       _showSnackBar("Passwords must match!");
       return;
     }
-    print("Password changed successfully");
+    try {
+      final String? token = await SessionManager.getSessionData();
+      final response = await http.put(
+        Uri.parse('http://10.0.2.2:8000/user'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'access_token=$token',
+        },
+        body: jsonEncode({
+          'resp': {
+            'password': newPasswordController.text
+          }
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Password changed')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to change password')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   void _confirmDeleteAccount() {
@@ -107,9 +142,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _changePassword,
+                onPressed:(){ _changePassword;
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen())
+                  );
+                },
                 child: Text("Change Password"),
               ),
+
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _confirmDeleteAccount,
