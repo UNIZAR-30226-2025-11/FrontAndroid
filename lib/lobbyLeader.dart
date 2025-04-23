@@ -3,53 +3,99 @@ import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_example/game.dart';
 
-import 'models/models.dart'; // Importa la pantalla de juego
+import 'models/models.dart';
 
 class StartGameScreen extends StatefulWidget {
   final IO.Socket socket;
-  final String lobbyId; // Se necesita el ID del lobby
+  final String lobbyId;
   final String username;
 
-  StartGameScreen(
-      {required this.socket, required this.lobbyId, required this.username});
+  StartGameScreen({
+    required this.socket,
+    required this.lobbyId,
+    required this.username
+  });
 
   @override
   _StartGameScreenState createState() => _StartGameScreenState();
 }
 
 class _StartGameScreenState extends State<StartGameScreen> {
-  String? errorMsg; // Variable para mostrar errores
-  List<PlayerLobbyJSON> players = []; // Lista de jugadores en el lobby
+  String? errorMsg;
+  List<PlayerLobbyJSON> players = [];
+  List<ConnectedFriend> connectedFriends = [];
   Map<String, dynamic>? initialGameState;
   late String username;
+  bool isLoadingFriends = true;
+
   @override
   void initState() {
     super.initState();
     username = widget.username;
+
     // Escuchar actualizaciones del lobby
     widget.socket.on('lobby-state', (data) {
       try {
         final lobbyUpdate = BackendLobbyStateUpdateJSON.fromJson(data);
         setState(() {
           try {
-            // Check if the players are already PlayerLobbyJSON objects
             players = lobbyUpdate.players;
-                    } catch (e) {
+          } catch (e) {
             print('Error converting players: $e');
           }
         });
       } catch (e) {
-        // Handle JSON parsing errors
         print('Error parsing lobby update: $e');
       }
     });
+
+    // Escuchar amigos conectados
+    widget.socket.on('get-friends-connected', (data) {
+      try {
+        final friendsData = BackendSendConnectedFriendsJSON.fromJson(jsonDecode(data));
+        setState(() {
+          connectedFriends = friendsData.connectedFriends;
+          isLoadingFriends = false;
+        });
+      } catch (e) {
+        print('Error parsing connected friends: $e');
+        setState(() {
+          isLoadingFriends = false;
+        });
+      }
+    });
+
+    // Escuchar respuestas a invitaciones a amigos
+    widget.socket.on('send-friend-join-lobby-request', (data) {
+      try {
+        final response = BackendResponseFriendRequestEnterLobbyJSON.fromJson(jsonDecode(data));
+        if (response.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error: ${response.errorMsg}")),
+          );
+        } else if (response.accept) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("${response.friendUsername} accepted your invitation!")),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("${response.friendUsername} declined your invitation")),
+          );
+        }
+      } catch (e) {
+        print('Error parsing friend response: $e');
+      }
+    });
+
+    // Solicitar amigos conectados al inicio
+    _requestConnectedFriends();
   }
 
   @override
   void dispose() {
-    widget.socket.off(
-        'lobby-state'); // Detener la escucha cuando se destruye la pantalla
-    //widget.socket.off('game-state');
+    widget.socket.off('lobby-state');
+    widget.socket.off('get-friends-connected');
+    widget.socket.off('send-friend-join-lobby-request');
     widget.socket.off('game-state', (data) {
       setState(() {
         initialGameState = data;
@@ -58,7 +104,32 @@ class _StartGameScreenState extends State<StartGameScreen> {
     super.dispose();
   }
 
-  // Función para enviar el "start-lobby" y esperar la respuesta
+  void _requestConnectedFriends() {
+    final request = FrontendRequestConnectedFriendsJSON(
+        error: false,
+        errorMsg: '',
+        lobbyId: widget.lobbyId
+    );
+
+    widget.socket.emit('get-friends-connected', jsonEncode(request.toJson()));
+  }
+
+  void _inviteFriend(String friendUsername) {
+    final request = FrontendSendFriendRequestEnterLobbyJSON(
+        error: false,
+        errorMsg: '',
+        lobbyId: widget.lobbyId,
+        friendUsername: friendUsername
+    );
+
+    widget.socket.emit('send-friend-join-lobby-request', jsonEncode(request.toJson()));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Invitation sent to $friendUsername")),
+    );
+  }
+
+  // Función para iniciar el juego
   void startLobby() {
     final Map<String, dynamic> startLobbyRequest = {
       "error": false,
@@ -69,9 +140,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
     widget.socket.emit('start-lobby', startLobbyRequest);
 
     widget.socket.on('start-lobby', (data) {
-      // Respuesta del servidor a start-lobby
       if (data['error'] == false) {
-        // Enviar start-game si el servidor respondió correctamente
         print("lobby started");
       } else {
         if (mounted) {
@@ -82,15 +151,6 @@ class _StartGameScreenState extends State<StartGameScreen> {
       }
     });
 
-    final Map<String, dynamic> startGameRequest = {
-      "error": false,
-      "errorMsg": "",
-      "lobbyId": widget.lobbyId,
-    };
-
-    print("aa");
-
-    //widget.socket.emit('start-game', startGameRequest);
     widget.socket.on('game-state', (data) {
       setState(() {
         initialGameState = data;
@@ -98,17 +158,17 @@ class _StartGameScreenState extends State<StartGameScreen> {
     });
 
     widget.socket.on('start-game', (data) {
-      // Respuesta del servidor a start-game
-      if (data['error'] == false) {;
+      if (data['error'] == false) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
               builder: (context) => GameScreen(
-                    socket: widget.socket,
-                    lobbyId: widget.lobbyId,
-                    initialGameState: initialGameState ?? {},
-                    username: username,
-                  )),
+                socket: widget.socket,
+                lobbyId: widget.lobbyId,
+                initialGameState: initialGameState ?? {},
+                username: username,
+              )
+          ),
         );
       } else {
         setState(() {
@@ -123,29 +183,44 @@ class _StartGameScreenState extends State<StartGameScreen> {
     return Scaffold(
       backgroundColor: Color(0xFF9D0514),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 200),
+          SizedBox(height: 60),
 
-          // 🏷️ Muestra el lobby ID en la parte superior
-          Text(
-            'Lobby ID: ${widget.lobbyId}',
-            style: TextStyle(
-                fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'Lobby ID: ${widget.lobbyId}',
+              style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold
+              ),
+            ),
           ),
 
-          SizedBox(height: 80),
+          SizedBox(height: 30),
 
-          // 📋 Lista de jugadores en el lobby
-          Text(
-            "Players in Lobby:",
-            style: TextStyle(fontSize: 20, color: Colors.white),
+          // Players section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              "Players in Lobby:",
+              style: TextStyle(fontSize: 20, color: Colors.white),
+            ),
           ),
 
           SizedBox(height: 10),
 
-          Expanded(
-            child: ListView.builder(
+          Container(
+            height: 180,
+            child: players.isEmpty
+                ? Center(
+                child: Text("No players yet",
+                    style: TextStyle(color: Colors.white70)
+                )
+            )
+                : ListView.builder(
               itemCount: players.length,
               itemBuilder: (context, index) {
                 return ListTile(
@@ -159,7 +234,94 @@ class _StartGameScreenState extends State<StartGameScreen> {
             ),
           ),
 
-          if (errorMsg != null) // Muestra el mensaje de error si existe
+          // Friends section
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              "Connected Friends:",
+              style: TextStyle(fontSize: 20, color: Colors.white),
+            ),
+          ),
+
+          SizedBox(height: 10),
+
+          Expanded(
+            child: isLoadingFriends
+                ? Center(child: CircularProgressIndicator(color: Colors.white))
+                : connectedFriends.isEmpty
+                ? Center(
+                child: Text("No friends online",
+                    style: TextStyle(color: Colors.white70)
+                )
+            )
+                : ListView.builder(
+              itemCount: connectedFriends.length,
+              itemBuilder: (context, index) {
+                final friend = connectedFriends[index];
+                final bool canInvite = friend.connected &&
+                    !friend.isInGame &&
+                    !friend.isAlreadyInThisLobby;
+
+                return ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white24,
+                      image: friend.avatar.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${friend.avatar}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: friend.avatar.isEmpty
+                        ? Icon(Icons.person, color: Colors.white)
+                        : null,
+                  ),
+                  title: Row(
+                    children: [
+                      Text(
+                        friend.username,
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      SizedBox(width: 8),
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: friend.connected ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  subtitle: Text(
+                    friend.isInGame
+                        ? "In game"
+                        : friend.isAlreadyInThisLobby
+                        ? "In this lobby"
+                        : "Online",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  trailing: canInvite
+                      ? ElevatedButton(
+                    onPressed: () => _inviteFriend(friend.username),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Color(0xFF9D0514),
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    ),
+                    child: Text("Invite"),
+                  )
+                      : null,
+                );
+              },
+            ),
+          ),
+
+          if (errorMsg != null)
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
@@ -169,21 +331,32 @@ class _StartGameScreenState extends State<StartGameScreen> {
               ),
             ),
 
-          SizedBox(height: 20),
-
-          ElevatedButton(
-            onPressed:
-                startLobby, // Llamada a startLobby en lugar de startGame directamente
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              textStyle: TextStyle(fontSize: 20),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: startLobby,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    textStyle: TextStyle(fontSize: 20),
+                  ),
+                  child: Text("Start Game"),
+                ),
+                SizedBox(width: 20),
+                IconButton(
+                  onPressed: _requestConnectedFriends,
+                  icon: Icon(Icons.refresh, color: Colors.white),
+                  tooltip: "Refresh friends list",
+                ),
+              ],
             ),
-            child: Text("Start Game"),
           ),
 
-          SizedBox(height: 80),
+          SizedBox(height: 20),
         ],
       ),
     );

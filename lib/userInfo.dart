@@ -1,6 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'SessionManager.dart';
+import 'models/models.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class UserInfo {
   // Singleton instance
@@ -203,4 +208,75 @@ class UserInfo {
     await _fetchUserData();
     await _fetchOwnedProducts();
   }
+}
+
+void setupFriendJoinLobbyRequestListener({
+  required IO.Socket socket,
+  required BuildContext context,
+  required String username,
+  required Function(String lobbyId) onAccept,
+}) {
+  socket.on('send-friend-join-lobby-request', (data) {
+    final BackendSendFriendRequestEnterLobbyJSON request =
+    BackendSendFriendRequestEnterLobbyJSON.fromJson(data);
+
+    if (!request.error) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Friend Invitation'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  backgroundImage: AssetImage('assets/images/avatar/${request.friendSendingRequestAvatar}'),
+                  radius: 30,
+                ),
+                const SizedBox(height: 10),
+                Text('${request.friendSendingRequest} has invited you to join their lobby.'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  final FrontendResponseFriendRequestEnterLobbyJSON response = FrontendResponseFriendRequestEnterLobbyJSON(
+                    error: false,
+                    errorMsg: '',
+                    lobbyId: request.lobbyId,
+                    accept: false,
+                    friendSendingRequest: request.friendSendingRequest,
+                  );
+
+                  socket.emit('send-friend-join-lobby-request', response.toJson());
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Decline'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+
+                  final FrontendResponseFriendRequestEnterLobbyJSON response = FrontendResponseFriendRequestEnterLobbyJSON(
+                    error: false,
+                    errorMsg: '',
+                    lobbyId: request.lobbyId,
+                    accept: true,
+                    friendSendingRequest: request.friendSendingRequest,
+                  );
+                  
+                  socket.emit('send-friend-join-lobby-request', response.toJson());
+                  Navigator.of(context).pop();
+
+                  // Call the onAccept callback to navigate to the game screen
+                  onAccept(request.lobbyId);
+                },
+                child: const Text('Accept'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  });
 }

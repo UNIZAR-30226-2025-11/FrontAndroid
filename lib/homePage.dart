@@ -3,11 +3,11 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_example/shop.dart' as shop;
+import 'package:flutter_example/userInfo.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_example/lobbyLeader.dart';
 import 'package:flutter_example/statistics.dart';
 import 'SessionManager.dart';
-import 'UserInfo.dart';
 import 'editProfile.dart';
 import 'friends.dart';
 import 'game.dart';
@@ -37,6 +37,25 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _initialize() async {
     await userInfo.initialize();
     await _initializeSocket();
+    setupFriendJoinLobbyRequestListener(
+        socket: socket,
+        context: context,
+        username: userInfo.username,
+        onAccept: (String lobbyId)
+    {
+      // You might want to handle this differently if already in a game screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) =>
+              StartGameScreen(
+                socket: socket,
+                lobbyId: lobbyId,
+                username: userInfo.username,
+              ),
+        ),
+      );
+    }
+    );
   }
 
   Future<void> _initializeSocket() async {
@@ -188,7 +207,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // Método para mostrar el Snackbar de confirmación de logout
   void _showLogOutBar() {
     // First, get a reference to the scaffold context before closing the drawer
     final mainContext = context;

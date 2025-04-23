@@ -120,7 +120,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         print(data);
         setState(() {
           friends = (data['users'] as List)
-              .where((user) => user['status'] == 'friend')
+              //.where((user) => user['status'] == 'friend')
               .map((user) =>
               Friend(
                 username: user['username'],
@@ -335,7 +335,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       ),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: AssetImage('assets/images/avatares/${friend.avatar}.png'),
+                          backgroundImage: AssetImage('assets/images/avatar/${friend.avatar}.png'),
                           backgroundColor: Colors.white.withOpacity(0.3),
                           // Fallback cuando la imagen no se encuentra
                           onBackgroundImageError: (exception, stackTrace) {
@@ -681,8 +681,9 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
+          print(data);
           requestUsers = (data['users'] as List)
-              .where((user) => user['status'] == 'pending')
+              //.where((user) => user['status'] == 'pending')
               .map((user) => Friend(
             username: user['username'],
             avatar: user['avatar'],

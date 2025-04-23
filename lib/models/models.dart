@@ -1136,3 +1136,243 @@ class UserJSON {
   };
 }
 
+// El archivo contiene todos los modelos necesarios para manejar
+// los mensajes JSON de sockets para la funcionalidad de amigos y lobby
+
+class FrontendRequestConnectedFriendsJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+
+  FrontendRequestConnectedFriendsJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+    };
+  }
+
+  factory FrontendRequestConnectedFriendsJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendRequestConnectedFriendsJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      lobbyId: json['lobbyId'] ?? '',
+    );
+  }
+}
+
+class ConnectedFriend {
+  final String username;
+  final String avatar;
+  final bool connected;
+  final bool isInGame;
+  final bool isAlreadyInThisLobby;
+
+  ConnectedFriend({
+    required this.username,
+    required this.avatar,
+    required this.connected,
+    required this.isInGame,
+    required this.isAlreadyInThisLobby,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'username': username,
+      'avatar': avatar,
+      'connected': connected,
+      'isInGame': isInGame,
+      'isAlreadyInThisLobby': isAlreadyInThisLobby,
+    };
+  }
+
+  factory ConnectedFriend.fromJson(Map<String, dynamic> json) {
+    return ConnectedFriend(
+      username: json['username'] ?? '',
+      avatar: json['avatar'] ?? '',
+      connected: json['connected'] ?? false,
+      isInGame: json['isInGame'] ?? false,
+      isAlreadyInThisLobby: json['isAlreadyInThisLobby'] ?? false,
+    );
+  }
+}
+
+class BackendSendConnectedFriendsJSON {
+  final bool error;
+  final String errorMsg;
+  final List<ConnectedFriend> connectedFriends;
+
+  BackendSendConnectedFriendsJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.connectedFriends,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'connectedFriends': connectedFriends.map((friend) => friend.toJson()).toList(),
+    };
+  }
+
+  factory BackendSendConnectedFriendsJSON.fromJson(Map<String, dynamic> json) {
+    List<dynamic> friendsList = json['connectedFriends'] ?? [];
+    List<ConnectedFriend> friends = friendsList
+        .map((friendJson) => ConnectedFriend.fromJson(friendJson))
+        .toList();
+
+    return BackendSendConnectedFriendsJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      connectedFriends: friends,
+    );
+  }
+}
+
+class FrontendSendFriendRequestEnterLobbyJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+  final String friendUsername;
+
+  FrontendSendFriendRequestEnterLobbyJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+    required this.friendUsername,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+      'friendUsername': friendUsername,
+    };
+  }
+
+  factory FrontendSendFriendRequestEnterLobbyJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendSendFriendRequestEnterLobbyJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      lobbyId: json['lobbyId'] ?? '',
+      friendUsername: json['friendUsername'] ?? '',
+    );
+  }
+}
+
+class BackendResponseFriendRequestEnterLobbyJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+  final String friendUsername;
+  final bool accept;
+
+  BackendResponseFriendRequestEnterLobbyJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+    required this.friendUsername,
+    required this.accept,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+      'friendUsername': friendUsername,
+      'accept': accept,
+    };
+  }
+
+  factory BackendResponseFriendRequestEnterLobbyJSON.fromJson(Map<String, dynamic> json) {
+    return BackendResponseFriendRequestEnterLobbyJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      lobbyId: json['lobbyId'] ?? '',
+      friendUsername: json['friendUsername'] ?? '',
+      accept: json['accept'] ?? false,
+    );
+  }
+}
+
+class BackendSendFriendRequestEnterLobbyJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+  final String friendSendingRequest;
+  final String friendSendingRequestAvatar;
+
+  BackendSendFriendRequestEnterLobbyJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+    required this.friendSendingRequest,
+    required this.friendSendingRequestAvatar,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+      'friendSendingRequest': friendSendingRequest,
+      'friendSendingRequestAvatar': friendSendingRequestAvatar,
+    };
+  }
+
+  factory BackendSendFriendRequestEnterLobbyJSON.fromJson(Map<String, dynamic> json) {
+    return BackendSendFriendRequestEnterLobbyJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      lobbyId: json['lobbyId'] ?? '',
+      friendSendingRequest: json['friendSendingRequest'] ?? '',
+      friendSendingRequestAvatar: json['friendSendingRequestAvatar'] ?? '',
+    );
+  }
+}
+
+class FrontendResponseFriendRequestEnterLobbyJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+  final bool accept;
+  final String friendSendingRequest;
+
+  FrontendResponseFriendRequestEnterLobbyJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+    required this.accept,
+    required this.friendSendingRequest,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+      'accept': accept,
+      'friendSendingRequest': friendSendingRequest,
+    };
+  }
+
+  factory FrontendResponseFriendRequestEnterLobbyJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendResponseFriendRequestEnterLobbyJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      lobbyId: json['lobbyId'] ?? '',
+      accept: json['accept'] ?? false,
+      friendSendingRequest: json['friendSendingRequest'] ?? '',
+    );
+  }
+}
+
