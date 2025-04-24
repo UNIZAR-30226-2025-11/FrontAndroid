@@ -238,7 +238,11 @@ class _StartGameScreenState extends State<WaitingScreen> {
     widget.socket.off('start-game');
     widget.socket.off('receive-friend-join-lobby-request');
     widget.socket.off('response-friend-join-lobby-request');
-    widget.socket.off('game-state');
+    widget.socket.off('game-state', (data) {
+      setState(() {
+        initialGameState = data;
+      });
+    });
     super.dispose();
   }
 
