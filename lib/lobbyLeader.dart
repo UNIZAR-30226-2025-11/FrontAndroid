@@ -49,43 +49,7 @@ class _StartGameScreenState extends State<StartGameScreen> {
       }
     });
 
-    // Escuchar amigos conectados
-    widget.socket.on('get-friends-connected', (data) {
-      try {
-        final friendsData = BackendSendConnectedFriendsJSON.fromJson(jsonDecode(data));
-        setState(() {
-          connectedFriends = friendsData.connectedFriends;
-          isLoadingFriends = false;
-        });
-      } catch (e) {
-        print('Error parsing connected friends: $e');
-        setState(() {
-          isLoadingFriends = false;
-        });
-      }
-    });
 
-    // Escuchar respuestas a invitaciones a amigos
-    widget.socket.on('send-friend-join-lobby-request', (data) {
-      try {
-        final response = BackendResponseFriendRequestEnterLobbyJSON.fromJson(jsonDecode(data));
-        if (response.error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${response.errorMsg}")),
-          );
-        } else if (response.accept) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("${response.friendUsername} accepted your invitation!")),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("${response.friendUsername} declined your invitation")),
-          );
-        }
-      } catch (e) {
-        print('Error parsing friend response: $e');
-      }
-    });
 
     // Solicitar amigos conectados al inicio
     _requestConnectedFriends();
@@ -94,8 +58,6 @@ class _StartGameScreenState extends State<StartGameScreen> {
   @override
   void dispose() {
     widget.socket.off('lobby-state');
-    widget.socket.off('get-friends-connected');
-    widget.socket.off('send-friend-join-lobby-request');
     widget.socket.off('game-state', (data) {
       setState(() {
         initialGameState = data;
@@ -111,7 +73,22 @@ class _StartGameScreenState extends State<StartGameScreen> {
         lobbyId: widget.lobbyId
     );
 
-    widget.socket.emit('get-friends-connected', jsonEncode(request.toJson()));
+    widget.socket.emitWithAck('get-friends-connected', jsonEncode(request.toJson()),
+        ack: (data) {
+          try {
+            final friendsData = BackendSendConnectedFriendsJSON.fromJson(jsonDecode(data));
+            setState(() {
+              connectedFriends = friendsData.connectedFriends;
+              isLoadingFriends = false;
+            });
+          } catch (e) {
+            print('Error parsing friend data in ack: $e');
+            setState(() {
+              isLoadingFriends = false;
+            });
+          }
+        }
+    );
   }
 
   void _inviteFriend(String friendUsername) {
@@ -122,10 +99,30 @@ class _StartGameScreenState extends State<StartGameScreen> {
         friendUsername: friendUsername
     );
 
-    widget.socket.emit('send-friend-join-lobby-request', jsonEncode(request.toJson()));
+    widget.socket.emitWithAck(
+        'send-friend-join-lobby-request',
+        jsonEncode(request.toJson()),
+        ack: (data) {
+          final response = BackendResponseFriendRequestEnterLobbyJSON.fromJson(
+              data is String ? jsonDecode(data) : data
+          );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Invitation sent to $friendUsername")),
+          if (response.error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Error: ${response.errorMsg}")),
+            );
+            return;
+          }
+
+          final String acceptStatus = response.accept ? "accepted" : "declined";
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Player ${response.friendUsername} ${acceptStatus} your invitation!"),
+              duration: Duration(milliseconds: 5000),
+            ),
+          );
+        }
     );
   }
 
