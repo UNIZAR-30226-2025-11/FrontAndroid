@@ -3,6 +3,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'SessionManager.dart';
+import 'userInfo.dart';
+import 'editProfile.dart';
+import 'customize.dart';
+import 'shop.dart';
+import 'login.dart';
+import 'statistics.dart';
 
 // URI base para todas las peticiones a la API
 const String baseUrl = 'http://10.0.2.2:8000';
@@ -20,88 +26,196 @@ class _FriendsScreenState extends State<FriendsScreen> {
   bool isLoading = true;
   String username = "";
   int coins = 0;
+  final UserInfo userInfo = UserInfo();
 
   @override
   void initState() {
     super.initState();
-    _initializeUsername().then((_) {
-      fetchFriends();
-      _initializeCoins();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await userInfo.initialize();
+    setState(() {
+      username = userInfo.username;
+      coins = userInfo.coins;
     });
+    await fetchFriends();
   }
 
-  Future<String?> _initializeUsername() async {
-    try {
-      final String? user = await SessionManager.getUsername();
-      setState(() {
-        username = user ?? ""; // Actualiza el username cuando esté disponible
-      });
-      return user;
-    } catch (e) {
-      print("Error initializing username: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Username error: $e"))
-      );
-      return "";
-    }
-  }
-
-  Future<void> _initializeCoins() async {
-    try {
-      final String? token = await SessionManager.getSessionData();
-      final res = await http.get(
-          Uri.parse('$baseUrl/users'),
-          headers: {
-            'Cookie': 'access_token=$token',
-          }
-      );
-
-      print('Current username: $username');
-      final data = jsonDecode(res.body);
-
-      if (res.statusCode != 200) {
-        var errorMessage = data.containsKey('message')
-            ? data['message']
-            : "Something went wrong. Try later";
-
-        print(errorMessage);
-        return;
-      } else {
-        // Find the user with matching username
-        final user = (data as List).firstWhere(
-              (user) => user['username'] == username,
-          orElse: () => null,
-        );
-
-        if (user != null) {
-          // Use setState to update the UI
-          setState(() {
-            coins = int.parse(user['coins'].toString());
-          });
-          print("Found user, coins: $coins");
-        } else {
-          print("User not found in the response data");
-        }
-      }
-    } catch (e) {
-      print("Error initializing coins: $e");
-      if (mounted) {  // Check if widget is still mounted
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Coins error: $e"))
-        );
-      }
-    }
-  }
-
+  // Método para abrir el drawer de perfil
   void _openProfileDrawer() {
-    Scaffold.of(context).openDrawer();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userInfo.username,
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                          SizedBox(width: 4),
+                          Text("${userInfo.coins}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(height: 30),
+              ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => StatisticsScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text("Edit profile"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => EditProfileScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CustomizeScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ShopScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                  leading: Icon(Icons.people),
+                  title: Text("Friends"),
+                  onTap:(){
+                    Navigator.pop(context);
+                  }
+              ),
+              ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text("Logout"),
+                  onTap: () {
+                    _showLogOutBar();
+                  }
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Método para mostrar la barra de confirmación de cierre de sesión
+  void _showLogOutBar() {
+    // Primero, cierra el drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
+        ),
+      );
+    });
   }
 
   Future<void> fetchFriends() async {
     setState(() {
       isLoading = true;
     });
-
 
     try {
       final String? token = await SessionManager.getSessionData();
@@ -111,7 +225,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       final response = await http.get(
           Uri.parse('$baseUrl/friends'),
           headers: {
-          'Cookie': 'access_token=$token',
+            'Cookie': 'access_token=$token',
           }
       );
 
@@ -120,7 +234,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         print(data);
         setState(() {
           friends = (data['users'] as List)
-              //.where((user) => user['status'] == 'friend')
+          //.where((user) => user['status'] == 'friend')
               .map((user) =>
               Friend(
                 username: user['username'],
@@ -128,7 +242,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 status: user['status'],
               ))
               .toList();
-                  pendingRequests = data['numRequests'];
+          pendingRequests = data['numRequests'];
           isLoading = false;
         });
       } else {
@@ -189,40 +303,83 @@ class _FriendsScreenState extends State<FriendsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: primaryColor,
-      body: SafeArea(
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
+        )
+            : null,
         child: Stack(
           children: [
-            // User profile y coins arriba
+            // Barra de perfil
             Positioned(
-              top: 20,
-              left: 30,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.person,
-                        size: 30, color: Colors.white), // Botón de perfil
-                    onPressed: _openProfileDrawer,
-                  ),
-                  SizedBox(width: 8),
-                  Text(username,
-                      style: TextStyle(color: Colors.white, fontSize: 18)),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 20,
-              right: 30,
-              child: Row(
-                children: [
-                  Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                  SizedBox(width: 8),
-                  Text('$coins',
-                      style: TextStyle(color: Colors.white, fontSize: 18)),
-                ],
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 16, right: 16, bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Profile button y username
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _openProfileDrawer,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: userInfo.avatarUrl.isNotEmpty
+                                  ? DecorationImage(
+                                image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                                fit: BoxFit.cover,
+                              )
+                                  : null,
+                              color: userInfo.avatarUrl.isEmpty ? Colors.white.withOpacity(0.2) : null,
+                            ),
+                            child: userInfo.avatarUrl.isEmpty
+                                ? Icon(Icons.person, color: Colors.white)
+                                : null,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          userInfo.username,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Coins
+                    Row(
+                      children: [
+                        Icon(Icons.monetization_on, color: Colors.yellow),
+                        SizedBox(width: 4),
+                        Text(
+                          "${userInfo.coins}",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            // Iconos de acción (más grandes y centrados)
             Positioned(
               top: 80,
               left: 0,
@@ -230,7 +387,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icono de añadir amigo
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
@@ -321,7 +477,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   ? Center(child: Text('No friends added yet', style: TextStyle(color: Colors.white)))
                   : Container(
                 decoration: BoxDecoration(
-                  color: primaryColor,
+                  color: Colors.transparent,
                 ),
                 child: ListView.builder(
                   itemCount: friends.length,
@@ -396,6 +552,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 }
 
+
 class SearchUsersScreen extends StatefulWidget {
   @override
   _SearchUsersScreenState createState() => _SearchUsersScreenState();
@@ -405,17 +562,199 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Friend> users = [];
   bool isSearching = false;
+  final UserInfo userInfo = UserInfo();
 
   @override
   void initState() {
     super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await userInfo.initialize();
     // Load users automatically when screen opens
     searchUsersInit();
   }
 
-  Future<void> searchUsersInit() async {
-    setState(() {
+  // Método para abrir el drawer de perfil
+  void _openProfileDrawer() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo
+                            .avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userInfo.username,
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow,
+                              size: 16),
+                          SizedBox(width: 4),
+                          Text("${userInfo.coins}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(height: 30),
+              ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            StatisticsScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text("Edit profile"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            EditProfileScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            CustomizeScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            ShopScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                  leading: Icon(Icons.people),
+                  title: Text("Friends"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  }
+              ),
+              ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text("Logout"),
+                  onTap: () {
+                    _showLogOutBar();
+                  }
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Método para mostrar la barra de confirmación de cierre de sesión
+  void _showLogOutBar() {
+    // Primero, cierra el drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
+        ),
+      );
     });
+  }
+
+  Future<void> searchUsersInit() async {
+    setState(() {});
 
     try {
       final String? token = await SessionManager.getSessionData();
@@ -436,11 +775,12 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
           users = data
               .where((user) => user['username'] != currentUsername)
               .where((user) => user['status'] == 'none')
-              .map((user) => Friend(
-            username: user['username'],
-            avatar: user['avatar'],
-            status: user['status']
-          ))
+              .map((user) =>
+              Friend(
+                  username: user['username'],
+                  avatar: user['avatar'],
+                  status: user['status']
+              ))
               .toList();
         });
       } else {
@@ -464,7 +804,8 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
     try {
       final String? token = await SessionManager.getSessionData();
-      final response = await http.get(Uri.parse('$baseUrl/users'), // sin query aquí
+      final response = await http.get(
+          Uri.parse('$baseUrl/users'), // sin query aquí
           headers: {
             'Cookie': 'access_token=$token',
           });
@@ -473,11 +814,12 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         final data = jsonDecode(response.body);
         final allUsers = (data['users'] as List)
             .where((user) => user['status'] == 'none')
-            .map((user) => Friend(
-          username: user['username'],
-          avatar: user['avatar'],
-          status: user['status'],
-        ))
+            .map((user) =>
+            Friend(
+              username: user['username'],
+              avatar: user['avatar'],
+              status: user['status'],
+            ))
             .toList();
 
         // ahora filtramos por el query localmente
@@ -545,110 +887,216 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: primaryColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with title only (sin flecha atrás)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Text(
-                  'Add Friend',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
+        )
+            : null,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              // Barra de perfil
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Profile button y username
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: _openProfileDrawer,
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: userInfo.avatarUrl.isNotEmpty
+                                    ? DecorationImage(
+                                  image: AssetImage(
+                                      'assets/images/avatar/${userInfo
+                                          .avatarUrl}.png'),
+                                  fit: BoxFit.cover,
+                                )
+                                    : null,
+                                color: userInfo.avatarUrl.isEmpty ? Colors.white
+                                    .withOpacity(0.2) : null,
+                              ),
+                              child: userInfo.avatarUrl.isEmpty
+                                  ? Icon(Icons.person, color: Colors.white)
+                                  : null,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            userInfo.username,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Coins
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow),
+                          SizedBox(width: 4),
+                          Text(
+                            "${userInfo.coins}",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
 
-            // Search box
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: 'Search users',
-                  labelStyle: TextStyle(color: Colors.white70),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.search, color: Colors.white),
-                    onPressed: () => searchUsers(_searchController.text),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.white54),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
-                ),
-                style: TextStyle(color: Colors.white),
-                cursorColor: Colors.white,
-                onSubmitted: (value) => searchUsers(value),
-              ),
-            ),
-
-            // Results
-            isSearching
-                ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                : Expanded(
-              child: users.isEmpty
-                  ? Center(child: Text('No users found', style: TextStyle(color: Colors.white)))
-                  : ListView.builder(
-                itemCount: users.length,
-                itemBuilder: (context, index) {
-                  final user = users[index];
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: AssetImage('assets/images/avatar/${user.avatar}.png'),
-                        backgroundColor: Colors.white.withOpacity(0.3),
-                        onBackgroundImageError: (exception, stackTrace) {
-                          print('Error cargando imagen de avatar: $exception');
-                        },
-                        child: user.avatar.isEmpty
-                            ? Text(
-                          user.username[0],
-                          style: TextStyle(color: Colors.white),
-                        )
-                            : null,
-                      ),
-                      title: Text(
-                        user.username,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      trailing: TextButton(
+              // Content with title and search
+              Padding(
+                padding: const EdgeInsets.only(top: 60),
+                child: Column(
+                  children: [
+                    // Header with title
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Center(
                         child: Text(
-                          'Add',
-                          style: TextStyle(color: Colors.white),
+                          'Add Friend',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                        ),
-                        onPressed: () => sendFriendRequest(user.username),
                       ),
                     ),
-                  );
-                },
+
+                    // Search box
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          labelText: 'Search users',
+                          labelStyle: TextStyle(color: Colors.white70),
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.search, color: Colors.white),
+                            onPressed: () =>
+                                searchUsers(_searchController.text),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.white),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.white54),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(color: Colors.white),
+                          ),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
+                        onSubmitted: (value) => searchUsers(value),
+                      ),
+                    ),
+
+                    // Results
+                    Expanded(
+                      child: isSearching
+                          ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white),
+                        ),
+                      )
+                          : users.isEmpty
+                          ? Center(
+                        child: Text(
+                          'No users found',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )
+                          : ListView.builder(
+                        itemCount: users.length,
+                        itemBuilder: (context, index) {
+                          final user = users[index];
+                          return Container(
+                            margin: EdgeInsets.symmetric(
+                                vertical: 2, horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: AssetImage(
+                                    'assets/images/avatar/${user.avatar}.png'),
+                                backgroundColor: Colors.white.withOpacity(0.3),
+                                onBackgroundImageError: (exception,
+                                    stackTrace) {
+                                  print(
+                                      'Error cargando imagen de avatar: $exception');
+                                },
+                                child: user.avatar.isEmpty
+                                    ? Text(
+                                  user.username[0],
+                                  style: TextStyle(color: Colors.white),
+                                )
+                                    : null,
+                              ),
+                              title: Text(
+                                user.username,
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              trailing: TextButton(
+                                child: Text(
+                                  'Add',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.white.withOpacity(
+                                      0.2),
+                                ),
+                                onPressed: () =>
+                                    sendFriendRequest(user.username),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
 
 class FriendRequestsScreen extends StatefulWidget {
   @override
@@ -658,11 +1106,195 @@ class FriendRequestsScreen extends StatefulWidget {
 class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   List<Friend> requestUsers = [];
   bool isLoading = true;
+  final UserInfo userInfo = UserInfo();
 
   @override
   void initState() {
     super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await userInfo.initialize();
+    // Load users automatically when screen opens
     fetchRequests();
+  }
+
+  // Método para abrir el drawer de perfil
+  void _openProfileDrawer() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo
+                            .avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userInfo.username,
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow,
+                              size: 16),
+                          SizedBox(width: 4),
+                          Text("${userInfo.coins}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(height: 30),
+              ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            StatisticsScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text("Edit profile"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            EditProfileScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            CustomizeScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            ShopScreen(
+                              username: userInfo.username,
+                            )),
+                  );
+                },
+              ),
+              ListTile(
+                  leading: Icon(Icons.people),
+                  title: Text("Friends"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  }
+              ),
+              ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text("Logout"),
+                  onTap: () {
+                    _showLogOutBar();
+                  }
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Método para mostrar la barra de confirmación de cierre de sesión
+  void _showLogOutBar() {
+    // Primero, cierra el drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
+        ),
+      );
+    });
   }
 
   Future<void> fetchRequests() async {
@@ -683,12 +1315,13 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         setState(() {
           print(data);
           requestUsers = (data['users'] as List)
-              //.where((user) => user['status'] == 'pending')
-              .map((user) => Friend(
-            username: user['username'],
-            avatar: user['avatar'],
-            status: user['status'],
-          ))
+          //.where((user) => user['status'] == 'pending')
+              .map((user) =>
+              Friend(
+                username: user['username'],
+                avatar: user['avatar'],
+                status: user['status'],
+              ))
               .toList();
           isLoading = false;
         });
@@ -733,7 +1366,8 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(accept ? 'Friend request accepted' : 'Friend request rejected'),
+            content: Text(
+                accept ? 'Friend request accepted' : 'Friend request rejected'),
           ),
         );
         fetchRequests();
@@ -753,82 +1387,173 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: primaryColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with title only (sin flecha atrás)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Text(
-                  'Friend Requests',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
+        )
+            : null,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Barra de perfil
+              Container(
+                padding: EdgeInsets.only(
+                    left: 16, right: 16, bottom: 8, top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Profile button y username
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _openProfileDrawer,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: userInfo.avatarUrl.isNotEmpty
+                                  ? DecorationImage(
+                                image: AssetImage(
+                                    'assets/images/avatar/${userInfo
+                                        .avatarUrl}.png'),
+                                fit: BoxFit.cover,
+                              )
+                                  : null,
+                              color: userInfo.avatarUrl.isEmpty
+                                  ? Colors.white.withOpacity(0.2)
+                                  : null,
+                            ),
+                            child: userInfo.avatarUrl.isEmpty
+                                ? Icon(Icons.person, color: Colors.white)
+                                : null,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          userInfo.username,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Coins
+                    Row(
+                      children: [
+                        Icon(Icons.monetization_on, color: Colors.yellow),
+                        SizedBox(width: 4),
+                        Text(
+                          "${userInfo.coins}",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Header con título
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    'Friend Requests',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Requests list
-            Expanded(
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                  : requestUsers.isEmpty
-                  ? Center(child: Text('No pending friend requests', style: TextStyle(color: Colors.white)))
-                  : ListView.builder(
-                itemCount: requestUsers.length,
-                itemBuilder: (context, index) {
-                  final user = requestUsers[index];
-                  return Container(
-                    margin: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: AssetImage('assets/images/avatar/${user.avatar}.png'),
-                        backgroundColor: Colors.white.withOpacity(0.3),
-                        onBackgroundImageError: (exception, stackTrace) {
-                          print('Error cargando imagen de avatar: $exception');
-                        },
-                        child: user.avatar.isEmpty
-                            ? Text(
-                          user.username[0],
+              // Lista de solicitudes
+              Expanded(
+                child: isLoading
+                    ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                    : requestUsers.isEmpty
+                    ? Center(
+                  child: Text(
+                    'No pending friend requests',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+                    : ListView.builder(
+                  itemCount: requestUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = requestUsers[index];
+                    return Container(
+                      margin: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: AssetImage(
+                              'assets/images/avatar/${user.avatar}.png'),
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          onBackgroundImageError: (exception, stackTrace) {
+                            print(
+                                'Error cargando imagen de avatar: $exception');
+                          },
+                          child: user.avatar.isEmpty
+                              ? Text(
+                            user.username[0],
+                            style: TextStyle(color: Colors.white),
+                          )
+                              : null,
+                        ),
+                        title: Text(
+                          user.username,
                           style: TextStyle(color: Colors.white),
-                        )
-                            : null,
-                      ),
-                      title: Text(
-                        user.username,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ElevatedButton(
-                            child: Text('Accept'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: primaryColor,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ElevatedButton(
+                              child: Text('Accept'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: primaryColor,
+                              ),
+                              onPressed: () =>
+                                  respondToRequest(user.username, true),
                             ),
-                            onPressed: () => respondToRequest(user.username, true),
-                          ),
-                          SizedBox(width: 8),
-                          TextButton(
-                            child: Text('Reject', style: TextStyle(color: Colors.white70)),
-                            onPressed: () => respondToRequest(user.username, false),
-                          ),
-                        ],
+                            SizedBox(width: 8),
+                            TextButton(
+                              child: Text('Reject',
+                                  style: TextStyle(color: Colors.white70)),
+                              onPressed: () =>
+                                  respondToRequest(user.username, false),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

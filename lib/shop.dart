@@ -6,6 +6,9 @@ import 'package:http/http.dart' as http;
 import 'SessionManager.dart';
 import 'editProfile.dart';
 import 'login.dart';
+import 'userInfo.dart';  // Import UserInfo class
+import 'customize.dart';  // Import Customize screen
+import 'friends.dart';    // Import Friends screen
 
 class ShopScreen extends StatefulWidget {
   final String username;
@@ -21,13 +24,19 @@ class _ShopScreenState extends State<ShopScreen> {
   int coins = 0;
   List<ShopCategory> categories = [];
   String username = '';
+  final UserInfo userInfo = UserInfo();  // Create UserInfo instance
 
   @override
   void initState() {
     super.initState();
     username = widget.username;
-    fetchUserData();
-    fetchShopItems();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await userInfo.initialize();  // Initialize UserInfo
+    await fetchUserData();
+    await fetchShopItems();
   }
 
   Future<void> fetchUserData() async {
@@ -115,9 +124,9 @@ class _ShopScreenState extends State<ShopScreen> {
           }
 
           fetchedCategories.add(ShopCategory(
-            name: category['name'],
-            products: products,
-            url: category['url']
+              name: category['name'],
+              products: products,
+              url: category['url']
           ));
         }
 
@@ -160,10 +169,10 @@ class _ShopScreenState extends State<ShopScreen> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-        'resp': {
-          'categoryName': categoryName,
-          'productName': productName,
-        }
+          'resp': {
+            'categoryName': categoryName,
+            'productName': productName,
+          }
         }),
       );
       print(res.body);
@@ -186,61 +195,121 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
+  // Updated profile drawer method that matches StatisticsScreen
   void _openProfileDrawer() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Profile Settings",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userInfo.username,
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                          SizedBox(width: 4),
+                          Text("${coins}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(height: 30),
               ListTile(
-                leading: const Icon(Icons.bar_chart),
-                title: const Text("Statistics"),
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) =>
-                            StatisticsScreen(
-                              username: username,
-                            )),
+                        builder: (context) => StatisticsScreen(
+                          username: userInfo.username,
+                        )),
                   );
                 },
               ),
-              const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text("Edit profile"),
+                leading: Icon(Icons.settings),
+                title: Text("Edit profile"),
                 onTap: () {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) =>
-                            EditProfileScreen(
-                              username: username,
-                            )),
+                        builder: (context) => EditProfileScreen(
+                          username: userInfo.username,
+                        )),
                   );
                 },
               ),
-              const SizedBox(height: 20),
               ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text("Logout"),
-                  onTap: () {
-                    SessionManager.removeSessionData();
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CustomizeScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                  leading: Icon(Icons.people),
+                  title: Text("Friends"),
+                  onTap:(){
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => FriendsScreen()),
                     );
+                  }
+              ),
+              ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text("Logout"),
+                  onTap: () {
+                    _showLogOutBar();
                   }
               ),
             ],
@@ -250,98 +319,135 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // Add logout confirmation method from Statistics screen
+  void _showLogOutBar() {
+    // First, close the drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF9D0514),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF9D0514),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.person, color: Colors.white),
-              onPressed: _openProfileDrawer,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              username,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
-        ),
-        actions: [
-          const Icon(Icons.monetization_on, color: Colors.yellow, size: 24),
-          const SizedBox(width: 8),
-          Text(
-            '$coins',
-            style: const TextStyle(color: Colors.white, fontSize: 18),
+      backgroundColor: Color(0xFF9D0514),
+      // Remove the AppBar since we'll add the profile bar in the Stack
+      body: Container(
+        // Add background image if available
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
           ),
-          const SizedBox(width: 16),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            final category = categories[index];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Text(
-                    category.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.85,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: category.products.length,
-                  itemBuilder: (context, productIndex) {
-                    final product = category.products[productIndex];
+        )
+            : null,
+        child: isLoading
+            ? Center(child: CircularProgressIndicator(color: Colors.white))
+            : Stack(
+          children: [
+            // Profile bar from userInfo
+            userInfo.buildProfileBar(context, _openProfileDrawer),
 
-                    // Determine image path based on category
-                    String imagePath;
-                    if (category.name.toLowerCase().contains('avatar')) {
-                      imagePath =
-                      'assets/images/avatar/${product.url}.png';
-                      print(imagePath);
-                    } else {
-                      imagePath =
-                      'assets/images/background/${product.url}.png';
-                    }
+            // Main content
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 70.0, 16.0, 16.0),
+                child: ListView.builder(
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            category.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.85,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                          itemCount: category.products.length,
+                          itemBuilder: (context, productIndex) {
+                            final product = category.products[productIndex];
 
-                    return ShopItemCard(
-                      name: product.name,
-                      price: product.price,
-                      imagePath: imagePath,
-                      isBought: product.isBought,
-                      onBuy: () => buyItem(category.url, product.url),
+                            // Determine image path based on category
+                            String imagePath;
+                            if (category.name.toLowerCase().contains('avatar')) {
+                              imagePath =
+                              'assets/images/avatar/${product.url}.png';
+                              print(imagePath);
+                            } else {
+                              imagePath =
+                              'assets/images/background/${product.url}.png';
+                            }
+
+                            return ShopItemCard(
+                              name: product.name,
+                              price: product.price,
+                              imagePath: imagePath,
+                              isBought: product.isBought,
+                              onBuy: () => buyItem(category.url, product.url),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     );
                   },
                 ),
-                const SizedBox(height: 16),
-              ],
-            );
-          },
+              ),
+            ),
+          ],
         ),
       ),
     );

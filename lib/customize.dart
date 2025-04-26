@@ -2,13 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'SessionManager.dart';
-import 'UserInfo.dart';
+import 'userInfo.dart';
 import 'homePage.dart';
+import 'editProfile.dart';
+import 'shop.dart';
+import 'friends.dart';
+import 'login.dart';
+import 'statistics.dart';
 
 class CustomizeScreen extends StatefulWidget {
   final String username;
 
-  CustomizeScreen({required this.username});
+  const CustomizeScreen({required this.username}) ;
 
   @override
   _CustomizeScreenState createState() => _CustomizeScreenState();
@@ -23,17 +28,19 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _initialize();
   }
 
+  Future<void> _initialize() async {
+    await userInfo.initialize();
+    await _loadUserData();
+  }
   Future<void> _loadUserData() async {
     setState(() {
       isLoading = true;
     });
 
     try {
-      await userInfo.initialize();
-
       setState(() {
         selectedAvatar = userInfo.avatarUrl;
         selectedBackground = userInfo.backgroundUrl;
@@ -92,45 +99,238 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
     return 'assets/images/background/${backgroundName.toLowerCase()}.png';
   }
 
+  // Método para abrir el drawer de perfil
+  void _openProfileDrawer() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userInfo.username,
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                          SizedBox(width: 4),
+                          Text("${userInfo.coins}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Divider(height: 30),
+              ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => StatisticsScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text("Edit profile"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => EditProfileScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ShopScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                  leading: Icon(Icons.people),
+                  title: Text("Friends"),
+                  onTap:(){
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => FriendsScreen()),
+                    );
+                  }
+              ),
+              ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text("Logout"),
+                  onTap: () {
+                    _showLogOutBar();
+                  }
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Método para mostrar la barra de confirmación de cierre de sesión
+  void _showLogOutBar() {
+    // Primero, cierra el drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF9D0514),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: EdgeInsets.all(18.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
+        )
+            : null,
+        child: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : Stack(
           children: [
-            Text(
-              "Customize Your Profile",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white, height: 5),
+            // Barra de perfil
+            userInfo.buildProfileBar(context, _openProfileDrawer),
+            // Contenido principal
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18.0, 70.0, 18.0, 18.0),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Customize Your Profile",
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      SizedBox(height: 30),
+
+                      // Preview section
+                      _buildPreviewSection(),
+
+                      SizedBox(height: 30),
+
+                      // Avatars section
+                      Text(
+                        "Avatars",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      SizedBox(height: 10),
+                      _buildProductGrid("avatar"),
+
+                      SizedBox(height: 30),
+
+                      // Backgrounds section
+                      Text(
+                        "Backgrounds",
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      SizedBox(height: 10),
+                      _buildProductGrid("background"),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            SizedBox(height: 30),
-
-            // Preview section
-            _buildPreviewSection(),
-
-            SizedBox(height: 30),
-
-            // Avatars section
-            Text(
-              "Avatars",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-            SizedBox(height: 10),
-            _buildProductGrid("avatar"),
-
-            SizedBox(height: 30),
-
-            // Backgrounds section
-            Text(
-              "Backgrounds",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-            SizedBox(height: 10),
-            _buildProductGrid("background"),
           ],
         ),
       ),

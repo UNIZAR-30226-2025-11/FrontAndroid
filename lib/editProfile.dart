@@ -6,6 +6,7 @@ import 'SessionManager.dart';
 import 'package:http/http.dart' as http;
 
 import 'login.dart';
+import 'userInfo.dart'; // Make sure to import the UserInfo class
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -17,7 +18,14 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
+  final UserInfo userInfo = UserInfo();
+
+  @override
+  void initState() {
+    super.initState();
+    userInfo.initialize();
+  }
 
   void _showSnackBar(String message) {
     var scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -108,8 +116,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-
-
   void _confirmDeleteAccount() {
     showDialog(
       context: context,
@@ -137,60 +143,126 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  // Método para abrir el drawer de perfil
+  void _openProfileDrawer() {
+    UserInfo.openProfileDrawer(context);
+  }
+
+  // Método para mostrar la barra de confirmación de cierre de sesión
+  void _showLogOutBar() {
+    // Primero, cierra el drawer
+    Navigator.pop(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text("Are you sure you want to log out?",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  SessionManager.removeSessionData();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("YES", style: TextStyle(color: Colors.white)),
+              ),
+              TextButton(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: Text("NO", style: TextStyle(color: Colors.white70)),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.black12,
+          duration: Duration(days: 365),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: AppBar(title: Text('Edit Profile')),
       backgroundColor: Color(0xFF9D0514),
-      body: Center(
-        child: Container(
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
           ),
-          width: MediaQuery.of(context).size.width * 0.85,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: newPasswordController,
-                decoration: InputDecoration(labelText: "New Password"),
-                obscureText: true,
-              ),
-              TextField(
-                controller: confirmPasswordController,
-                decoration: InputDecoration(labelText: "Confirm Password"),
-                obscureText: true,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed:(){ _changePassword;
-                  SessionManager.removeSessionData();
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen())
-                  );
-                },
-                child: Text("Change Password"),
-              ),
+        )
+            : null,
+        child: Stack(
+          children: [
+            // Barra de perfil
+            userInfo.buildProfileBar(context, _openProfileDrawer),
 
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _confirmDeleteAccount,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: Text("Delete Account",
-                    style: TextStyle(color: Colors.white)),
+            // Main content - centered on screen
+            Center(
+              child: Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                width: MediaQuery.of(context).size.width * 0.85,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: newPasswordController,
+                      decoration: InputDecoration(labelText: "New Password"),
+                      obscureText: true,
+                    ),
+                    TextField(
+                      controller: confirmPasswordController,
+                      decoration: InputDecoration(labelText: "Confirm Password"),
+                      obscureText: true,
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        _changePassword();
+                        SessionManager.removeSessionData();
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => LoginScreen())
+                        );
+                      },
+                      child: Text("Change Password"),
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _confirmDeleteAccount,
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      child: Text("Delete Account",
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

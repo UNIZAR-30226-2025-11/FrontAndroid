@@ -148,7 +148,7 @@ class _MainScreenState extends State<MainScreen> {
 
   // Método para crear una sala de lobby
   void _createLobby(int maxPlayers) {
-    final lobbyRequest = {
+    final  lobbyRequest = {
       'error': false,
       'errorMsg': '',
       'maxPlayers': maxPlayers,
@@ -400,7 +400,6 @@ class _MainScreenState extends State<MainScreen> {
             ),
           );
         } else {
-          // Si el username está vacío y no hay error, probablemente falló la inicialización
           if (userInfo.username.isEmpty && !snapshot.hasError) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushReplacement(
