@@ -425,102 +425,125 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
 
-          return Scaffold(
-            backgroundColor: Color(0xFF9D0514),
-            body: Container(
-              decoration: userInfo.backgroundUrl.isNotEmpty
-                  ? BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
-                  fit: BoxFit.cover,
-                  opacity: 0.5,
-                ),
-              )
-                  : null,
-              child: Stack(
+    return Scaffold(
+      backgroundColor: Color(0xFF9D0514),
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
+        )
+            : null,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 48,
+              right: 30,
+              child: Row(
                 children: [
-                  Positioned(
-                    top: 48,
-                    right: 30,
-                    child: Row(
-                      children: [
-                        SizedBox(width: 8),
-                        Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                        SizedBox(width: 8),
-                        Text('${userInfo.coins}',
-                            style: TextStyle(color: Colors.white, fontSize: 18)),
+                  SizedBox(width: 8),
+                  Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+                  SizedBox(width: 8),
+                  Text('${userInfo.coins}', style: TextStyle(color: Colors.white, fontSize: 18)),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 40,
+              left: 30,
+              child: Row(
+                children: [
+                  SizedBox(width: 8),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.2),
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: _openProfileDrawer,
+                        child: userInfo.avatarUrl.isEmpty
+                            ? Icon(Icons.person, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(userInfo.username, style: TextStyle(color: Colors.white, fontSize: 18)),
+                ],
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Welcome back!',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 10.0,
+                          color: Colors.black,
+                          offset: Offset(2.0, 2.0),
+                        ),
                       ],
                     ),
                   ),
-                  Positioned(
-                    top: 40,
-                    left: 30,
-                    child: Row(
-                      children: [
-                        SizedBox(width: 8),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.2),
-                            image: userInfo.avatarUrl.isNotEmpty
-                                ? DecorationImage(
-                              image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                              fit: BoxFit.cover,
-                            )
-                                : null,
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(20),
-                              onTap: _openProfileDrawer,
-                              child: userInfo.avatarUrl.isEmpty
-                                  ? Icon(Icons.person, color: Colors.white)
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(userInfo.username,
-                            style: TextStyle(color: Colors.white, fontSize: 18)),
-                      ],
+                  Text(
+                    'Ready for a new adventure?',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            // Se ejecuta cuando se crea una nueva sala
-                            int? players = await _showPlayerSelectionDialog(context);
-                          },
-                          child: Text("New Lobby"),
+                  SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () async {
+                      // Se ejecuta cuando se crea una nueva sala
+                      int? players = await _showPlayerSelectionDialog(context);
+                    },
+                    child: Text("New Lobby"),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => JoinGameScreen(
+                            socket: socket,
+                          ),
                         ),
-                        SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => JoinGameScreen(
-                                    socket: socket,
-                                  )),
-                            );
-                            setState(() {
-                              _initialize();
-                            });
-                          },
-                          child: Text("Join Lobby"),
-                        ),
-                      ],
-                    ),
+                      );
+                      setState(() {
+                        _initialize();
+                      });
+                    },
+                    child: Text("Join Lobby"),
                   ),
                 ],
               ),
             ),
-          );
-        }
+          ],
+        ),
+      ),
+    );
   }
+}
