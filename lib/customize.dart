@@ -31,6 +31,11 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
     _initialize();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _initialize() async {
     await userInfo.initialize();
     await _loadUserData();
@@ -81,6 +86,9 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
           SnackBar(content: Text("Failed to update customization")),
         );
       }
+      setState(() {
+        _initialize();
+      });
     } catch (e) {
       print("Error updating customization: $e");
       ScaffoldMessenger.of(context).showSnackBar(

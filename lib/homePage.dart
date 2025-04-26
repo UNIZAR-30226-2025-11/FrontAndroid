@@ -25,18 +25,24 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late IO.Socket socket;
-  late Future<void> _initFuture;
+  //late Future<void> _initFuture;
   final UserInfo userInfo = UserInfo();
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _initFuture = _initialize();
+    _initialize();
   }
 
   Future<void> _initialize() async {
     await userInfo.initialize();
     await _initializeSocket();
+    if (mounted) {
+      setState(() {
+        _loading = false;
+      });
+    }
     setupFriendJoinLobbyRequestListener(
         socket: socket,
         context: context,
@@ -53,7 +59,11 @@ class _MainScreenState extends State<MainScreen> {
                 username: userInfo.username,
               ),
         ),
+
       );
+      setState(() {
+        _initialize();
+      });
     }
     );
   }
@@ -71,6 +81,9 @@ class _MainScreenState extends State<MainScreen> {
               context,
               MaterialPageRoute(builder: (context) => LoginScreen())
           );
+          setState(() {
+            _initialize();
+          });
         }
         return;
       }
@@ -128,6 +141,9 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         );
+        setState(() {
+           _initialize();
+        });
       } else {
         String errorMsg = response != null
             ? response['errorMsg']
@@ -233,6 +249,9 @@ class _MainScreenState extends State<MainScreen> {
                     MaterialPageRoute(
                         builder: (context) => LoginScreen()),
                   );
+                  setState(() {
+                     _initialize();
+                  });
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
               ),
@@ -316,6 +335,9 @@ class _MainScreenState extends State<MainScreen> {
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                     _initialize();
+                  });
                 },
               ),
               ListTile(
@@ -329,19 +351,26 @@ class _MainScreenState extends State<MainScreen> {
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                     _initialize();
+                  });
                 },
               ),
               ListTile(
                 leading: Icon(Icons.style),
                 title: Text("Customize"),
-                onTap: () {
-                  Navigator.pushReplacement(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (context) => CustomizeScreen(
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    print('custome set state');
+                    _initialize();
+                  });
                 },
               ),
               ListTile(
@@ -355,6 +384,9 @@ class _MainScreenState extends State<MainScreen> {
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                     _initialize();
+                  });
                 },
               ),
               ListTile(
@@ -366,6 +398,9 @@ class _MainScreenState extends State<MainScreen> {
                       MaterialPageRoute(
                           builder: (context) => FriendsScreen()),
                     );
+                    setState(() {
+                       _initialize();
+                    });
                   }
               ),
               ListTile(
@@ -384,30 +419,11 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _initFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        } else if (snapshot.hasError) {
-          return Scaffold(
-            body: Center(
-              child: Text("Error: ${snapshot.error}"),
-            ),
-          );
-        } else {
-          if (userInfo.username.isEmpty && !snapshot.hasError) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            });
-          }
+    if (_loading) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
           return Scaffold(
             backgroundColor: Color(0xFF9D0514),
@@ -493,6 +509,9 @@ class _MainScreenState extends State<MainScreen> {
                                     socket: socket,
                                   )),
                             );
+                            setState(() {
+                              _initialize();
+                            });
                           },
                           child: Text("Join Lobby"),
                         ),
@@ -504,7 +523,4 @@ class _MainScreenState extends State<MainScreen> {
             ),
           );
         }
-      },
-    );
   }
-}

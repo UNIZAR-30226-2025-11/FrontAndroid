@@ -10,9 +10,7 @@ import 'shop.dart';
 import 'login.dart';
 import 'statistics.dart';
 
-// URI base para todas las peticiones a la API
 const String baseUrl = 'http://10.0.2.2:8000';
-// Color primario de la aplicación (rojo)
 const Color primaryColor = Color(0xFF9D0514);
 
 class FriendsScreen extends StatefulWidget {
