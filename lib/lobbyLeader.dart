@@ -73,58 +73,66 @@ class _StartGameScreenState extends State<StartGameScreen> {
         lobbyId: widget.lobbyId
     );
 
-    widget.socket.emitWithAck('get-friends-connected', jsonEncode(request.toJson()),
-        ack: (data) {
-          try {
-            final friendsData = BackendSendConnectedFriendsJSON.fromJson(jsonDecode(data));
-            setState(() {
-              connectedFriends = friendsData.connectedFriends;
-              isLoadingFriends = false;
-            });
-          } catch (e) {
-            print('Error parsing friend data in ack: $e');
-            setState(() {
-              isLoadingFriends = false;
-            });
-          }
-        }
-    );
+    widget.socket.emitWithAck('get-friends-connected', request.toJson(), ack: (data) {
+      try {
+        final friendsData = BackendSendConnectedFriendsJSON.fromJson(data);
+        setState(() {
+          connectedFriends = friendsData.connectedFriends;
+          isLoadingFriends = false;
+        });
+      } catch (e) {
+        print('Error parsing friend data in ack: $e');
+        setState(() {
+          isLoadingFriends = false;
+        });
+      }
+    });
+
+
   }
 
   void _inviteFriend(String friendUsername) {
     final request = FrontendSendFriendRequestEnterLobbyJSON(
-        error: false,
-        errorMsg: '',
-        lobbyId: widget.lobbyId,
-        friendUsername: friendUsername
+      error: false,
+      errorMsg: '',
+      lobbyId: widget.lobbyId,
+      friendUsername: friendUsername,
     );
 
     widget.socket.emitWithAck(
         'send-friend-join-lobby-request',
-        jsonEncode(request.toJson()),
+        request.toJson(), // NO jsonEncode aquí
         ack: (data) {
-          final response = BackendResponseFriendRequestEnterLobbyJSON.fromJson(
-              data is String ? jsonDecode(data) : data
-          );
-
-          if (response.error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Error: ${response.errorMsg}")),
+          try {
+            final response = BackendResponseFriendRequestEnterLobbyJSON.fromJson(
+                data is String ? jsonDecode(data) : data
             );
-            return;
+
+            if (response.error) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error: ${response.errorMsg}")),
+              );
+              return;
+            }
+
+            final String acceptStatus = response.accept ? "accepted" : "declined";
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Player ${response.friendUsername} ${acceptStatus} your invitation!"),
+                duration: Duration(milliseconds: 5000),
+              ),
+            );
+          } catch (e) {
+            print('Error parsing invite friend response: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("An error occurred while inviting the friend.")),
+            );
           }
-
-          final String acceptStatus = response.accept ? "accepted" : "declined";
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Player ${response.friendUsername} ${acceptStatus} your invitation!"),
-              duration: Duration(milliseconds: 5000),
-            ),
-          );
         }
     );
   }
+
 
   // Función para iniciar el juego
   void startLobby() {
