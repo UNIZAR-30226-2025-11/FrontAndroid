@@ -15,10 +15,10 @@ class WaitingScreen extends StatefulWidget {
   WaitingScreen({required this.socket, required this.lobbyId});
 
   @override
-  _StartGameScreenState createState() => _StartGameScreenState();
+  _StartGameScreenState2 createState() => _StartGameScreenState2();
 }
 
-class _StartGameScreenState extends State<WaitingScreen> {
+class _StartGameScreenState2 extends State<WaitingScreen> {
   String? errorMsg;
   List<PlayerLobbyJSON> players = [];
   List<ConnectedFriend> connectedFriends = [];

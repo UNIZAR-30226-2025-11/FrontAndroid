@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_example/lobby.dart';
 import 'package:flutter_example/shop.dart' as shop;
 import 'package:flutter_example/userInfo.dart';
 import 'package:http/http.dart' as http;
@@ -49,14 +50,12 @@ class _MainScreenState extends State<MainScreen> {
         username: userInfo.username,
         onAccept: (String lobbyId)
     {
-      // You might want to handle this differently if already in a game screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) =>
-              StartGameScreen(
+              WaitingScreen(
                 socket: socket,
                 lobbyId: lobbyId,
-                username: userInfo.username,
               ),
         ),
 
@@ -66,6 +65,8 @@ class _MainScreenState extends State<MainScreen> {
       });
     }
     );
+
+
   }
 
   Future<void> _initializeSocket() async {

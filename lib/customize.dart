@@ -29,6 +29,7 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
   void initState() {
     super.initState();
     _initialize();
+
   }
 
   @override

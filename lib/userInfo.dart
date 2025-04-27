@@ -458,10 +458,10 @@ void setupFriendJoinLobbyRequestListener({
   required String username,
   required Function(String lobbyId) onAccept,
 }) {
-  socket.on('send-friend-join-lobby-request', (data) {
+  socket.on('receive-friend-join-lobby-request', (data) {
     final BackendSendFriendRequestEnterLobbyJSON request =
     BackendSendFriendRequestEnterLobbyJSON.fromJson(data);
-
+    print('INVITACION RECIBIDA');
     if (!request.error) {
       showDialog(
         context: context,
@@ -473,7 +473,7 @@ void setupFriendJoinLobbyRequestListener({
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
-                  backgroundImage: AssetImage('assets/images/avatar/${request.friendSendingRequestAvatar}'),
+                  backgroundImage: AssetImage('assets/images/avatar/${request.friendSendingRequestAvatar}.png'),
                   radius: 30,
                 ),
                 const SizedBox(height: 10),
@@ -491,7 +491,7 @@ void setupFriendJoinLobbyRequestListener({
                     friendSendingRequest: request.friendSendingRequest,
                   );
 
-                  socket.emit('send-friend-join-lobby-request', response.toJson());
+                  socket.emit('receive-friend-join-lobby-request', response.toJson());
                   Navigator.of(context).pop();
                 },
                 child: const Text('Decline'),
@@ -507,7 +507,7 @@ void setupFriendJoinLobbyRequestListener({
                     friendSendingRequest: request.friendSendingRequest,
                   );
                   
-                  socket.emit('send-friend-join-lobby-request', response.toJson());
+                  socket.emit('receive-friend-join-lobby-request', response.toJson());
                   Navigator.of(context).pop();
 
                   // Call the onAccept callback to navigate to the game screen
