@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_example/UserInfo.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -56,8 +57,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   bool _isBombAnimating = false;
   BackendWinnerJSON? _pendingWinner;
 
-
+  // for the user's info (avatar, etc.)
+  final UserInfo userInfo = UserInfo();
   final myId = 1;
+
+  // for the timer
+  int _animationRestartKey = 0;
+  double _animationValue = 1.0;
 
   @override
   void initState() {
@@ -91,9 +97,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     }
     setupSocketListeners();
     setupChatSocketListeners();
-    _initializeUsername();
-    _initializeCoins();
+    _initializeUser();
+    //_initializeUsername();
+    //_initializeCoins();
     //startTimer();
+  }
+
+  Future<void> _initializeUser() async {
+    await userInfo.initialize();
+    username = userInfo.username;
+    coins = userInfo.coins;
   }
 
   Future<String?> _initializeUsername() async {
@@ -174,6 +187,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           remainingTime = timeOut;
           turnUsername = data['turnUsername'];
           cardsLeftInDeck = data['cardsLeftInDeck'];
+          // Increment the restart key to trigger rebuild
+          if (turnUsername == username) {
+            _animationValue = 1.0;
+          } else {
+            _animationValue = 0.0;
+          }
+          _animationRestartKey++;
         });
       }
     });
@@ -298,7 +318,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           }
           break;
       }
-      showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
+      //showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
     }
 
     socket.on('notify-action', (data) {
@@ -459,6 +479,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      overflow: TextOverflow.ellipsis, // Truncate with ellipsis if text is too long
+                                      maxLines: 1, // Ensure it stays on a single line
+                                      textAlign: TextAlign.center, // Center the text
                                     ),
                                   ),
                                 ],
@@ -843,17 +866,32 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           child: Row(
             children: [
               SizedBox(width: 8),
-              Icon(Icons.person, size: 30, color: Colors.white),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: userInfo.avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                    image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                    fit: BoxFit.cover,
+                  )
+                      : null,
+                  color: Colors.grey, // fallback background color
+                ),
+                child: userInfo.avatarUrl.isEmpty
+                    ? Icon(Icons.person, size: 24, color: Colors.white)
+                    : null,
+              ),
               SizedBox(width: 8),
-              Text(username,
-                  style: TextStyle(
-                      color: turnUsername == username
-                          ? Colors.yellow
-                          : Colors.white,
-                      fontSize: 18,
-                      fontWeight: turnUsername == username
-                          ? FontWeight.bold
-                          : FontWeight.normal)),
+              Text(
+                username,
+                style: TextStyle(
+                  color: turnUsername == username ? Colors.yellow : Colors.white,
+                  fontSize: 18,
+                  fontWeight: turnUsername == username ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
             ],
           ),
         ),
@@ -901,10 +939,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3
-                    && turnUsername == username ? () {
-                        sendGameAction(selectedCards);
-                      }
+                onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3 && turnUsername == username
+                    ? () {
+                  sendGameAction(selectedCards);
+                  setState(() {
+                    selectedCards.clear();  // <-- Clear immediately after pressing!
+                  });
+                }
                     : null,
                 child: Text('Play Cards'),
               ),
@@ -1232,12 +1273,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     );
   }
 
-
-
   Widget _buildTimerIndicator() {
     return TweenAnimationBuilder(
+      key: ValueKey(_animationRestartKey), // Use timeOut as the key to restart the animation
       duration: Duration(milliseconds: timeOut),
-      tween: Tween<double>(begin: 1.0, end: 0.0),
+      tween: Tween<double>(begin: _animationValue, end: 0.0),
       builder: (context, value, child) {
         // Calculate remaining time from the animation value
         int displayTime = (timeOut * value / 1000).ceil();
@@ -1296,11 +1336,20 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           // Player icon with turn indicator
           Stack(
             children: [
-              Icon(
-                Icons.person,
-                size: 40,
-                color: player.active ? Colors.blue : Colors.grey,
-              ),
+              player.playerAvatar.isNotEmpty
+                  ? Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/avatar/${player.playerAvatar}.png'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                : Icon(Icons.person, size: 40, color: player.active ? Colors.blue : Colors.grey),
+
               if (isCurrentTurn)
                 Positioned(
                   top: 0,
