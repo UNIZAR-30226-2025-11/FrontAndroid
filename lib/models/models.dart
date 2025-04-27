@@ -39,27 +39,35 @@ enum ActionType {
 
 class PlayerJSON {
   final String playerUsername;
+  final String playerAvatar;
   final int numCards;
   final bool active;
+  final bool disconnected;
 
   PlayerJSON(
       {required this.playerUsername,
       required this.numCards,
-      required this.active});
+      required this.active,
+      required this.playerAvatar,
+      required this.disconnected});
 
   factory PlayerJSON.fromJson(Map<String, dynamic> json) {
     return PlayerJSON(
       playerUsername: json['playerUsername'],
+      playerAvatar: json['playerAvatar'],
       numCards: json['numCards'],
       active: json['active'],
+      disconnected: json['disconnected']
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'playerUsername': playerUsername,
+      'playerAvatar': playerAvatar,
       'numCards': numCards,
       'active': active,
+      'disconnected': disconnected,
     };
   }
 }
@@ -98,6 +106,8 @@ class BackendStateUpdateJSON {
   final int timeOut;
   final String username;
   final int cardsLeftInDeck;
+  final CardJSON? lastCardPlayed;
+  final int turnsLeft;
 
   BackendStateUpdateJSON({
     required this.error,
@@ -109,6 +119,8 @@ class BackendStateUpdateJSON {
     required this.timeOut,
     required this.username,
     required this.cardsLeftInDeck,
+    required this.lastCardPlayed,
+    required this.turnsLeft,
   });
 
   factory BackendStateUpdateJSON.fromJson(Map<String, dynamic> json) {
@@ -125,7 +137,12 @@ class BackendStateUpdateJSON {
         turnUsername: json['turnUsername'],
         timeOut: json['timeOut'],
         username: json['playerUsername'],
-        cardsLeftInDeck: json['cardsLeftInDeck']);
+        cardsLeftInDeck: json['cardsLeftInDeck'],
+        lastCardPlayed: json['lastCardPlayed'] is Map<String, dynamic>
+          ? CardJSON.fromJson(json['lastCardPlayed'] as Map<String, dynamic>)
+          : null, // If it's not a Map, assign null
+        turnsLeft: json['turnsLeft'],
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -139,6 +156,8 @@ class BackendStateUpdateJSON {
       'timeOut': timeOut,
       'username': username,
       'cardsLeftInDeck': cardsLeftInDeck,
+      'lastCardPlayed': lastCardPlayed,
+      'turnsLeft': turnsLeft,
     };
   }
 }
@@ -221,6 +240,10 @@ class BackendWinnerJSON {
   final String winnerUsername;
   final int coinsEarned;
   final String lobbyId;
+  final bool isWinner;
+  final String gameDate;
+  final double timePlayed;
+  final int turnsPlayed;
 
   BackendWinnerJSON({
     required this.error,
@@ -228,6 +251,10 @@ class BackendWinnerJSON {
     required this.winnerUsername,
     required this.coinsEarned,
     required this.lobbyId,
+    required this.isWinner,
+    required this.gameDate,
+    required this.timePlayed,
+    required this.turnsPlayed,
   });
 
   factory BackendWinnerJSON.fromJson(Map<String, dynamic> json) {
@@ -236,7 +263,12 @@ class BackendWinnerJSON {
         errorMsg: json['errorMsg'],
         winnerUsername: json['winnerUsername'],
         coinsEarned: json['coinsEarned'],
-        lobbyId: json['lobbyId']);
+        lobbyId: json['lobbyId'],
+        isWinner: json['isWinner'],
+        gameDate: json['gameDate'],
+        timePlayed: json['timePlayed'],
+        turnsPlayed: json['turnsPlayed'],
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -246,6 +278,10 @@ class BackendWinnerJSON {
       'winnerUsername': winnerUsername,
       'coinsEarned': coinsEarned,
       'lobbyId': lobbyId,
+      'isWinner': isWinner,
+      'gameDate': gameDate,
+      'timePlayed': timePlayed,
+      'turnsPlayed': turnsPlayed,
     };
   }
 }
@@ -696,16 +732,19 @@ class BackendLobbyStateUpdateJSON {
 class PlayerLobbyJSON {
   final String name;
   final bool isLeader;
+  final bool isYou;
 
   PlayerLobbyJSON({
     required this.name,
     required this.isLeader,
+    required this.isYou,
   });
 
   factory PlayerLobbyJSON.fromJson(Map<String, dynamic> json) {
     return PlayerLobbyJSON(
       name: json['name'],
       isLeader: json['isLeader'],
+      isYou: json['isYou'],
     );
   }
 
@@ -713,6 +752,7 @@ class PlayerLobbyJSON {
     return {
       'name': name,
       'isLeader': isLeader,
+      'isYou': isYou,
     };
   }
 }
@@ -827,6 +867,35 @@ class BackendNotifyActionJSON {
       'triggerUser': triggerUser,
       'targetUser': targetUser,
       'action': action,
+    };
+  }
+}
+
+
+class BackendPlayerCanReconnectJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+
+  BackendPlayerCanReconnectJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+  });
+
+  factory BackendPlayerCanReconnectJSON.fromJson(Map<String, dynamic> json) {
+    return BackendPlayerCanReconnectJSON(
+        error: json['error'],
+        errorMsg: json['errorMsg'],
+        lobbyId: json['lobbyId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
     };
   }
 }
