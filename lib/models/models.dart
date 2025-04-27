@@ -242,7 +242,7 @@ class BackendWinnerJSON {
   final String lobbyId;
   final bool isWinner;
   final String gameDate;
-  final double timePlayed;
+  final int timePlayed;
   final int turnsPlayed;
 
   BackendWinnerJSON({

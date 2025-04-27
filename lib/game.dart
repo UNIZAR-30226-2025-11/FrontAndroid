@@ -257,7 +257,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             ),
             actions: <Widget>[
               TextButton(
-                child: Text('Close'),
+                child: Text('Leave game'),
                 onPressed: () {
                   Navigator.pushReplacement(
                     context,
@@ -330,6 +330,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
 
     socket.on('winner', (data) {
+      print("WINNER");
+      print(data);
       setState(() {
         BackendWinnerJSON winnerData = BackendWinnerJSON.fromJson(data);
         if (_isBombAnimating) {
