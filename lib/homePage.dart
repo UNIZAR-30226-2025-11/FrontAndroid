@@ -350,7 +350,7 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.pushReplacement(
                     mainContext,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
+                        builder: (context) => MainScreen()),
                   );
                   setState(() {
                      //_initialize();
@@ -367,7 +367,7 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.black12,
+          backgroundColor: Color(0xFF3D0E40),
           duration: Duration(days: 365),
         ),
       );
@@ -674,7 +674,7 @@ class _MainScreenState extends State<MainScreen> {
                     'Welcome back!',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 34,
                       fontWeight: FontWeight.bold,
                       shadows: [
                         Shadow(
@@ -689,7 +689,7 @@ class _MainScreenState extends State<MainScreen> {
                     'Ready for a new adventure?',
                     style: TextStyle(
                       color: Colors.white70,
-                      fontSize: 16,
+                      fontSize: 20,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
