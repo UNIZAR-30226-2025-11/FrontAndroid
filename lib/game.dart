@@ -317,6 +317,128 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             );
           }
           break;
+        case "AttackSuccessful":
+        // If we're not involved in the attack, show the dialog
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => AttackDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: true,
+              ),
+            );
+          }
+          break;
+        case "AttackFailed":
+        // If we're not involved in the attack, show the dialog
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => AttackDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: false,
+              ),
+            );
+          }
+          break;
+        case "SkipTurnSuccessful":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => SkipDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: true,
+              ),
+            );
+          }
+          break;
+        case "SkipTurnFailed":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => SkipDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: false,
+              ),
+            );
+          }
+          break;
+        case "FavorAttackFailed":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => FavorDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: false,
+              ),
+            );
+          }
+          break;
+        case "FavorAttackSuccessful":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => FavorDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: true,
+              ),
+            );
+          }
+          break;
+        case "TwoWildCardAttackSuccessful":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => TwoWildDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: true,
+              ),
+            );
+          }
+          break;
+        case "TwoWildCardAttackFailed":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => TwoWildDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: false,
+              ),
+            );
+          }
+          break;
+        case "ThreeWildCardAttackSuccessful":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => ThreeWildDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: true,
+              ),
+            );
+          }
+          break;
+        case "ThreeWildCardAttackFailed":
+          if (triggerName != username && targetName != username) {
+            showDialog(
+              context: context,
+              builder: (_) => ThreeWildDialog(
+                player1: triggerName,
+                player2: targetName,
+                success: false,
+              ),
+            );
+          }
+          break;
       }
       //showTemporaryMessage('Action: $act with target $targetName and trigger $triggerName');
     }
@@ -350,10 +472,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         BackendGameSelectPlayerJSON.fromJson(data);
         int timeLeft = selectPlayerData.timeOut;
 
-        // Show dialog to select a player
+        List<PlayerJSON> currentPlayers = List.from(players); // snapshot
+
+        print('Players in dialog: ${currentPlayers.map((p) => p.playerUsername)}');
+
         showDialog(
           context: context,
-          barrierDismissible: false, // Prevent dismissing by tapping outside
+          barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text('Select a Player'),
@@ -362,9 +487,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 children: [
                   Text('Time left: $timeLeft seconds'),
                   SizedBox(height: 10),
-                  // Create a list of players to select from
                   Column(
-                    children: players.map((player) {
+                    children: currentPlayers.map((player) {
                       return ListTile(
                         title: Text(player.playerUsername),
                         onTap: () {
@@ -376,9 +500,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                             playerUsername: player.playerUsername,
                             lobbyId: widget.lobbyId,
                           );
+                          print('Selected player to send: ${player.playerUsername}');
                           socket.emit('game-select-player', response.toJson());
 
-                          // Close the dialog
                           Navigator.of(context).pop();
                         },
                       );
@@ -908,16 +1032,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         if (players.length >= 2)
           Positioned(
             bottom: 400,
-            left: 25,
+            left: 15,
             child: buildPlayerCard(players[1],
-                isCurrentTurn: players[0].playerUsername == turnUsername),
+                isCurrentTurn: players[1].playerUsername == turnUsername),
           ),
         if (players.length >= 3)
           Positioned(
             bottom: 400,
-            right: 25,
+            right: 15,
             child: buildPlayerCard(players[2],
-                isCurrentTurn: players[0].playerUsername == turnUsername),
+                isCurrentTurn: players[2].playerUsername == turnUsername),
           ),
         Positioned(
           bottom: 220,
@@ -958,7 +1082,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   List<int> empty = [];
                   sendGameAction(empty);
                 },
-                child: Text('Steal a Card'),
+                child: Text('Draw a Card'),
               ),
             ],
           ),
@@ -1401,39 +1525,31 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   void animatePlayedCards(List<int> cardIndices) {
     if (cardIndices.isEmpty) return;
 
+    final indicesSnapshot = List<int>.from(cardIndices); // 👈 Safe snapshot
+
     setState(() {
       isAnimating = true;
       animatingCards.clear();
 
-      for (int index in cardIndices) {
-        // Create an animation controller for each card
+      for (int index in indicesSnapshot) {
         AnimationController controller = AnimationController(
           duration: Duration(milliseconds: 800),
           vsync: this,
         );
 
-        // Get the card data
         CardJSON card = playerCards[index];
         String imagePath = 'assets/images/${card.type}.jpg';
 
-        // Create animations for position and opacity
         Animation<double> moveAnimation = Tween<double>(
           begin: 0.0,
           end: 1.0,
-        ).animate(CurvedAnimation(
-          parent: controller,
-          curve: Curves.easeOutQuad,
-        ));
+        ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutQuad));
 
         Animation<double> opacityAnimation = Tween<double>(
           begin: 1.0,
           end: 0.0,
-        ).animate(CurvedAnimation(
-          parent: controller,
-          curve: Interval(0.5, 1.0, curve: Curves.easeOut),
-        ));
+        ).animate(CurvedAnimation(parent: controller, curve: Interval(0.5, 1.0)));
 
-        // Store all animation data
         animatingCards.add({
           'controller': controller,
           'moveAnimation': moveAnimation,
@@ -1442,11 +1558,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           'index': index,
         });
 
-        // Start animation with a slight delay for each card
+        // Delay launch, use snapshot to compare safely
         Future.delayed(Duration(milliseconds: 100 * animatingCards.length - 1), () {
           controller.forward().then((_) {
-            // When the last animation completes, clear the list
-            if (index == cardIndices.last) {
+            if (index == indicesSnapshot.last) { // 👈 Safe access
               setState(() {
                 isAnimating = false;
                 animatingCards.clear();
@@ -1811,3 +1926,157 @@ class FutureSeenDialog extends StatelessWidget {
   }
 }
 
+class AttackDialog extends StatelessWidget {
+  final String player1;
+  final String player2;
+  final bool success;
+
+  AttackDialog({
+    required this.player1,
+    required this.player2,
+    required this.success,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Auto-close the dialog after 1 second
+    Future.delayed(Duration(seconds: 1), () {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+
+    return AlertDialog(
+      title: Text('Attack!'),
+      content: Text(
+        success
+            ? '$player1 has successfully attacked $player2'
+            : '$player1 tried to attack $player2, but they defended!',
+      ),
+    );
+  }
+}
+
+class SkipDialog extends StatelessWidget {
+  final String player1;
+  final String player2;
+  final bool success;
+
+  SkipDialog({
+    required this.player1,
+    required this.player2,
+    required this.success,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Auto-close the dialog after 1 second
+    Future.delayed(Duration(seconds: 1), () {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+
+    return AlertDialog(
+      title: Text('Skip!'),
+      content: Text(
+        success
+            ? '$player1 has successfully skipped his turn'
+            : '$player1 tried to skip his turn, but $player2 refused!',
+      ),
+    );
+  }
+}
+
+class FavorDialog extends StatelessWidget {
+  final String player1;
+  final String player2;
+  final bool success;
+
+  FavorDialog({
+    required this.player1,
+    required this.player2,
+    required this.success,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Auto-close the dialog after 1 second
+    Future.delayed(Duration(seconds: 1), () {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+
+    return AlertDialog(
+      title: Text('Favor!'),
+      content: Text(
+        success
+            ? '$player1 has been granted a favor by $player2'
+            : '$player1 asked for a favor to $player2, but they refused!',
+      ),
+    );
+  }
+}
+
+class TwoWildDialog extends StatelessWidget {
+  final String player1;
+  final String player2;
+  final bool success;
+
+  TwoWildDialog({
+    required this.player1,
+    required this.player2,
+    required this.success,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Auto-close the dialog after 1 second
+    Future.delayed(Duration(seconds: 1), () {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+
+    return AlertDialog(
+      title: Text('Wild cards!'),
+      content: Text(
+        success
+            ? '$player1 has successfully launched a two wild card attack to $player2'
+            : '$player1 tried to launch a two wild card attack to $player2, but they defended!',
+      ),
+    );
+  }
+}
+
+class ThreeWildDialog extends StatelessWidget {
+  final String player1;
+  final String player2;
+  final bool success;
+
+  ThreeWildDialog({
+    required this.player1,
+    required this.player2,
+    required this.success,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Auto-close the dialog after 1 second
+    Future.delayed(Duration(seconds: 1), () {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+
+    return AlertDialog(
+      title: Text('Wild cards!'),
+      content: Text(
+        success
+            ? '$player1 has successfully launched a three wild card attack to $player2'
+            : '$player1 tried to launch a three wild card attack to $player2, but they defended!',
+      ),
+    );
+  }
+}
