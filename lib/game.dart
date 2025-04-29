@@ -107,6 +107,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     await userInfo.initialize();
     username = userInfo.username;
     coins = userInfo.coins;
+    setState(() {
+      username = userInfo.username;
+      coins = userInfo.coins;
+    });
   }
 
   Future<String?> _initializeUsername() async {
@@ -966,190 +970,187 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      /*appBar: AppBar(
-        title: Text('Game Info'),
-        automaticallyImplyLeading: false,
-      ),*/
       backgroundColor: Color(0xFF9D0514),
-      body: Stack(
+      body: Container(
+        decoration: userInfo.backgroundUrl.isNotEmpty
+            ? BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+          ),
+        )
+            : null,
+        child: Stack(
           children: [
-        Positioned(
-          top: 48,
-          right: 30,
-          child: Row(
-            children: [
-              SizedBox(width: 8),
-              Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-              SizedBox(width: 8),
-              Text('$coins',
-                  style: TextStyle(color: Colors.white, fontSize: 18)),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 40,
-          left: 30,
-          child: Row(
-            children: [
-              SizedBox(width: 8),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: userInfo.avatarUrl.isNotEmpty
-                      ? DecorationImage(
-                    image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                    fit: BoxFit.cover,
-                  )
-                      : null,
-                  color: Colors.grey, // fallback background color
-                ),
-                child: userInfo.avatarUrl.isEmpty
-                    ? Icon(Icons.person, size: 24, color: Colors.white)
-                    : null,
+            Positioned(
+              top: 48,
+              right: 30,
+              child: Row(
+                children: [
+                  SizedBox(width: 8),
+                  Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
+                  SizedBox(width: 8),
+                  Text('$coins',
+                      style: TextStyle(color: Colors.white, fontSize: 18)),
+                ],
               ),
-              SizedBox(width: 8),
-              Text(
-                username,
-                style: TextStyle(
-                  color: turnUsername == username ? Colors.yellow : Colors.white,
-                  fontSize: 18,
-                  fontWeight: turnUsername == username ? FontWeight.bold : FontWeight.normal,
-                ),
+            ),
+            Positioned(
+              top: 40,
+              left: 30,
+              child: Row(
+                children: [
+                  SizedBox(width: 8),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: userInfo.avatarUrl.isNotEmpty
+                          ? DecorationImage(
+                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                        fit: BoxFit.cover,
+                      )
+                          : null,
+                      color: Colors.grey, // fallback background color
+                    ),
+                    child: userInfo.avatarUrl.isEmpty
+                        ? Icon(Icons.person, size: 24, color: Colors.white)
+                        : null,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    username,
+                    style: TextStyle(
+                      color: turnUsername == username ? Colors.yellow : Colors.white,
+                      fontSize: 18,
+                      fontWeight: turnUsername == username ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        // Only display other players, not the current player
-        if (players.isNotEmpty)
-          Positioned(
-            top: 100,
-            left: MediaQuery.of(context).size.width / 2 - 60,
-            child: buildPlayerCard(players[0],
-                isCurrentTurn: players[0].playerUsername == turnUsername),
-          ),
-        if (players.length >= 2)
-          Positioned(
-            bottom: 400,
-            left: 15,
-            child: buildPlayerCard(players[1],
-                isCurrentTurn: players[1].playerUsername == turnUsername),
-          ),
-        if (players.length >= 3)
-          Positioned(
-            bottom: 400,
-            right: 15,
-            child: buildPlayerCard(players[2],
-                isCurrentTurn: players[2].playerUsername == turnUsername),
-          ),
-        Positioned(
-          bottom: 220,
-          left: MediaQuery.of(context).size.width / 2 - 15,
-          /*child: SizedBox(
-              width: 25,
-              height: 25,
-              child: CircularProgressIndicator(
-                value: remainingTime / 60,
-                backgroundColor: Colors.grey,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                strokeWidth: 25,
+            ),
+            // Only display other players, not the current player
+            if (players.isNotEmpty)
+              Positioned(
+                top: 100,
+                left: MediaQuery.of(context).size.width / 2 - 60,
+                child: buildPlayerCard(players[0],
+                    isCurrentTurn: players[0].playerUsername == turnUsername),
               ),
-            ),*/
-          child: _buildTimerIndicator(),
-        ),
-        Positioned(
-          bottom: 210,
-          left: MediaQuery.of(context).size.width / 2 - 165,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3 && turnUsername == username
-                    ? () {
-                  sendGameAction(selectedCards);
-                  setState(() {
-                    selectedCards.clear();  // <-- Clear immediately after pressing!
-                  });
-                }
-                    : null,
-                child: Text('Play Cards'),
+            if (players.length >= 2)
+              Positioned(
+                bottom: 400,
+                left: 15,
+                child: buildPlayerCard(players[1],
+                    isCurrentTurn: players[1].playerUsername == turnUsername),
               ),
-              SizedBox(width: 90),
-              ElevatedButton(
-                onPressed: () {
-                  // Acción de robar carta
-                  List<int> empty = [];
-                  sendGameAction(empty);
-                },
-                child: Text('Draw a Card'),
+            if (players.length >= 3)
+              Positioned(
+                bottom: 400,
+                right: 15,
+                child: buildPlayerCard(players[2],
+                    isCurrentTurn: players[2].playerUsername == turnUsername),
               ),
-            ],
-          ),
-        ),
-        Positioned(
-          bottom: 20,
-          left: MediaQuery.of(context).size.width / 2 - 150,
-          child: Container(
-            height: 180,
-            width: 300,
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: playerCards.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    String cardName = entry.value.type;
-                    String imagePath = 'assets/images/$cardName.jpg';
-                    bool isSelected = selectedCards.contains(index);
-                    double cardHeight = isSelected ? 170 : 150;
-                    double cardWidth = isSelected ? 115 : 100;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (selectedCards.contains(index)) {
-                            selectedCards.remove(index);
-                          } else {
-                            selectedCards.add(index);
-                          }
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 150),
-                        margin: EdgeInsets.symmetric(horizontal: 8.0),
-                        height: cardHeight,
-                        width: cardWidth,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.yellow.withOpacity(0.8),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  )
-                                ]
-                              : [],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.asset(
-                            imagePath,
-                            fit: BoxFit.fill,
+            Positioned(
+              bottom: 220,
+              left: MediaQuery.of(context).size.width / 2 - 15,
+              child: _buildTimerIndicator(),
+            ),
+            Positioned(
+              bottom: 210,
+              left: MediaQuery.of(context).size.width / 2 - 165,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: selectedCards.isNotEmpty && selectedCards.length <= 3 && turnUsername == username
+                        ? () {
+                      sendGameAction(selectedCards);
+                      setState(() {
+                        selectedCards.clear();  // <-- Clear immediately after pressing!
+                      });
+                    }
+                        : null,
+                    child: Text('Play Cards'),
+                  ),
+                  SizedBox(width: 90),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Acción de robar carta
+                      List<int> empty = [];
+                      sendGameAction(empty);
+                    },
+                    child: Text('Draw a Card'),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              bottom: 20,
+              left: MediaQuery.of(context).size.width / 2 - 150,
+              child: Container(
+                height: 180,
+                width: 300,
+                child: Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: playerCards.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        String cardName = entry.value.type;
+                        String imagePath = 'assets/images/$cardName.jpg';
+                        bool isSelected = selectedCards.contains(index);
+                        double cardHeight = isSelected ? 170 : 150;
+                        double cardWidth = isSelected ? 115 : 100;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (selectedCards.contains(index)) {
+                                selectedCards.remove(index);
+                              } else {
+                                selectedCards.add(index);
+                              }
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: Duration(milliseconds: 150),
+                            margin: EdgeInsets.symmetric(horizontal: 8.0),
+                            height: cardHeight,
+                            width: cardWidth,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: isSelected
+                                  ? [
+                                BoxShadow(
+                                  color: Colors.yellow.withOpacity(0.8),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                )
+                              ]
+                                  : [],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.asset(
+                                imagePath,
+                                fit: BoxFit.fill,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
             if (isAnimating)
               ...animatingCards.map((cardData) {
                 return AnimatedBuilder(
@@ -1395,6 +1396,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             ),
           ],
+        ),
       ),
     );
   }

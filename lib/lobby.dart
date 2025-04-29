@@ -35,6 +35,7 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeUser();
 
     // Escuchar actualizaciones del lobby
     widget.socket.on('lobby-state', (data) {
@@ -90,8 +91,6 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
         });
       }
     });
-
-    _initializeUser();
 
     // Solicitar amigos conectados al inicio
     _requestConnectedFriends();
