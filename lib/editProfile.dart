@@ -359,7 +359,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
+                        builder: (context) => MainScreen()),
                   );
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -373,7 +373,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.black12,
+          backgroundColor: Color(0xFF3D0E40),
           duration: Duration(days: 365),
         ),
       );
@@ -396,6 +396,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             : null,
         child: Stack(
           children: [
+            ...List.generate(
+              15,
+                  (index) => Positioned(
+                left: (index * 67) % MediaQuery.of(context).size.width,
+                top: (index * 83) % MediaQuery.of(context).size.height,
+                child: Opacity(
+                  opacity: 0.3,
+                  child: index % 3 == 0
+                      ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                      : index % 3 == 1
+                      ? Icon(Icons.album, size: 25, color: Colors.purple[300]) // Bomb-like icon
+                      : Icon(Icons.pets, size: 20, color: Colors.purple[100]), // Cat-like icon
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.only(top: 20.0), // Adjust as needed
               child: userInfo.buildProfileBar(context, _openProfileDrawer),

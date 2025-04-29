@@ -242,6 +242,21 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [
+          ...List.generate(
+            15,
+                (index) => Positioned(
+              left: (index * 67) % MediaQuery.of(context).size.width,
+              top: (index * 83) % MediaQuery.of(context).size.height,
+              child: Opacity(
+                opacity: 0.3,
+                child: index % 3 == 0
+                    ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                    : index % 3 == 1
+                    ? Icon(Icons.album, size: 25, color: Colors.purple[300]) // Bomb-like icon
+                    : Icon(Icons.pets, size: 20, color: Colors.purple[100]), // Cat-like icon
+              ),
+            ),
+          ),
           // Main content below the user info bar
           Padding(
             padding: const EdgeInsets.only(top: 120.0),

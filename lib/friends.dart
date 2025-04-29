@@ -193,6 +193,21 @@ class _FriendsScreenState extends State<FriendsScreen> {
             : null,
         child: Stack(
           children: [
+            ...List.generate(
+              15,
+                  (index) => Positioned(
+                left: (index * 67) % MediaQuery.of(context).size.width,
+                top: (index * 83) % MediaQuery.of(context).size.height,
+                child: Opacity(
+                  opacity: 0.3,
+                  child: index % 3 == 0
+                      ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                      : index % 3 == 1
+                      ? Icon(Icons.album, size: 25, color: Colors.purple[300]) // Bomb-like icon
+                      : Icon(Icons.pets, size: 20, color: Colors.purple[100]), // Cat-like icon
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.only(top: 20.0), // Adjust as needed
               child: userInfo.buildProfileBar(context, _openProfileDrawer),
@@ -604,7 +619,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
+                        builder: (context) => MainScreen()),
                   );
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -618,7 +633,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.black12,
+          backgroundColor: Color(0xFF3D0E40),
           duration: Duration(days: 365),
         ),
       );
@@ -773,6 +788,21 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         child: SafeArea(
           child: Stack(
             children: [
+              ...List.generate(
+                15,
+                    (index) => Positioned(
+                  left: (index * 67) % MediaQuery.of(context).size.width,
+                  top: (index * 83) % MediaQuery.of(context).size.height,
+                  child: Opacity(
+                    opacity: 0.3,
+                    child: index % 3 == 0
+                        ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                        : index % 3 == 1
+                        ? Icon(Icons.album, size: 25, color: Colors.purple[300]) // Bomb-like icon
+                        : Icon(Icons.pets, size: 20, color: Colors.purple[100]), // Cat-like icon
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(top: 0.0), // Adjust as needed
                 child: userInfo.buildProfileBar(context, _openProfileDrawer),
@@ -955,7 +985,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
+                        builder: (context) => MainScreen()),
                   );
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -969,7 +999,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.black12,
+          backgroundColor: Color(0xFF3D0E40),
           duration: Duration(days: 365),
         ),
       );
@@ -1077,102 +1107,136 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
           ),
         )
             : null,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 0.0), // Adjust as needed
-                child: userInfo.buildProfileBar(context, _openProfileDrawer),
-              ),
-
-              // Header con título
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    'Friend Requests',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+        child: Stack(
+          children: [
+            // Elementos decorativos de fondo
+            ...List.generate(
+              15,
+                  (index) =>
+                  Positioned(
+                    left: (index * 67) % MediaQuery
+                        .of(context)
+                        .size
+                        .width,
+                    top: (index * 83) % MediaQuery
+                        .of(context)
+                        .size
+                        .height,
+                    child: Opacity(
+                      opacity: 0.3,
+                      child: index % 3 == 0
+                          ? Icon(
+                          Icons.circle, size: 20, color: Colors.purple[200])
+                          : index % 3 == 1
+                          ? Icon(
+                          Icons.album, size: 25, color: Colors.purple[300])
+                          : Icon(
+                          Icons.pets, size: 20, color: Colors.purple[100]),
                     ),
                   ),
-                ),
-              ),
+            ),
 
-              // Lista de solicitudes
-              Expanded(
-                child: isLoading
-                    ? Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            // Contenido principal
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 0.0),
+                    child: userInfo.buildProfileBar(
+                        context, _openProfileDrawer),
                   ),
-                )
-                    : requestUsers.isEmpty
-                    ? Center(
-                  child: Text(
-                    'No pending friend requests',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                )
-                    : ListView.builder(
-                  itemCount: requestUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = requestUsers[index];
-                    return Container(
-                      margin: EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: AssetImage(
-                              'assets/images/avatar/${user.avatar}.png'),
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          onBackgroundImageError: (exception, stackTrace) {
-                            print(
-                                'Error cargando imagen de avatar: $exception');
-                          },
-                          child: user.avatar.isEmpty
-                              ? Text(
-                            user.username[0],
-                            style: TextStyle(color: Colors.white),
-                          )
-                              : null,
-                        ),
-                        title: Text(
-                          user.username,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ElevatedButton(
-                              child: Text('Accept'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: primaryColor,
-                              ),
-                              onPressed: () =>
-                                  respondToRequest(user.username, true),
-                            ),
-                            SizedBox(width: 8),
-                            TextButton(
-                              child: Text('Reject',
-                                  style: TextStyle(color: Colors.white70)),
-                              onPressed: () =>
-                                  respondToRequest(user.username, false),
-                            ),
-                          ],
+
+                  // Header con título
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: Text(
+                        'Friend Requests',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+
+                  // Lista de solicitudes
+                  Expanded(
+                    child: isLoading
+                        ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : requestUsers.isEmpty
+                        ? Center(
+                      child: Text(
+                        'No pending friend requests',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                        : ListView.builder(
+                      itemCount: requestUsers.length,
+                      itemBuilder: (context, index) {
+                        final user = requestUsers[index];
+                        return Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: 2, horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage: AssetImage(
+                                  'assets/images/avatar/${user.avatar}.png'),
+                              backgroundColor: Colors.white.withOpacity(0.3),
+                              onBackgroundImageError: (exception, stackTrace) {
+                                print(
+                                    'Error cargando imagen de avatar: $exception');
+                              },
+                              child: user.avatar.isEmpty
+                                  ? Text(
+                                user.username[0],
+                                style: TextStyle(color: Colors.white),
+                              )
+                                  : null,
+                            ),
+                            title: Text(
+                              user.username,
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton(
+                                  child: Text('Accept'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: primaryColor,
+                                  ),
+                                  onPressed: () =>
+                                      respondToRequest(user.username, true),
+                                ),
+                                SizedBox(width: 8),
+                                TextButton(
+                                  child: Text('Reject',
+                                      style: TextStyle(color: Colors.white70)),
+                                  onPressed: () =>
+                                      respondToRequest(user.username, false),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
