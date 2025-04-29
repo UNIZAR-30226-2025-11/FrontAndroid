@@ -167,40 +167,82 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: userInfo.avatarUrl.isNotEmpty
-                          ? DecorationImage(
-                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                        fit: BoxFit.cover,
-                      )
-                          : null,
-                    ),
-                    child: userInfo.avatarUrl.isEmpty
-                        ? Icon(Icons.person, size: 40)
-                        : null,
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // User Info Section
+                  Row(
                     children: [
-                      Text(
-                        userInfo.username,
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      // Avatar
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: userInfo.avatarUrl.isNotEmpty
+                              ? DecorationImage(
+                            image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                            fit: BoxFit.cover,
+                          )
+                              : null,
+                        ),
+                        child: userInfo.avatarUrl.isEmpty
+                            ? Icon(Icons.person, size: 40)
+                            : null,
                       ),
-                      Row(
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
-                          SizedBox(width: 4),
-                          Text("${userInfo.coins}"),
+                          Text(
+                            userInfo.username,
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                              SizedBox(width: 4),
+                              Text("${userInfo.coins}"),
+                            ],
+                          ),
                         ],
                       ),
                     ],
+                  ),
+                  // Home Button Section
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MainScreen()
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200], // Light background for the button
+                        borderRadius: BorderRadius.circular(20), // Rounded corners
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.home, color: Colors.black87),
+                          SizedBox(width: 6),
+                          Text(
+                            "Home",
+                            style: TextStyle(color: Colors.black87, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -209,21 +251,22 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
                 leading: Icon(Icons.bar_chart),
                 title: Text("Statistics"),
                 onTap: () {
-                  Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => StatisticsScreen(
+                        builder: (context) =>StatisticsScreen(
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text("Edit profile"),
                 onTap: () {
-                  Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -231,20 +274,32 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
                 leading: Icon(Icons.style),
                 title: Text("Customize"),
-                onTap: () {
-                  Navigator.pop(context);
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CustomizeScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                  setState(() {
+                    print('custome set state');
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
                 leading: Icon(Icons.shopping_cart),
                 title: Text("Shop"),
                 onTap: () {
-                  Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -252,18 +307,23 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
                   leading: Icon(Icons.people),
                   title: Text("Friends"),
                   onTap:(){
-                    Navigator.pop(context);
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                           builder: (context) => FriendsScreen()),
                     );
+                    setState(() {
+                      //_initialize();
+                    });
                   }
               ),
               ListTile(
@@ -341,12 +401,15 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
             ? Center(child: CircularProgressIndicator())
             : Stack(
           children: [
-            // Barra de perfil
-            userInfo.buildProfileBar(context, _openProfileDrawer),
+            Padding(
+                padding: const EdgeInsets.only(top: 20.0),
+                // Barra de perfil
+                child: userInfo.buildProfileBar(context, _openProfileDrawer),
+            ),
             // Contenido principal
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(18.0, 70.0, 18.0, 18.0),
+                padding: const EdgeInsets.fromLTRB(18.0, 100.0, 18.0, 70.0),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

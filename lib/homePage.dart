@@ -251,7 +251,7 @@ class _MainScreenState extends State<MainScreen> {
                         builder: (context) => LoginScreen()),
                   );
                   setState(() {
-                     _initialize();
+                     //_initialize();
                   });
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -287,40 +287,82 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: userInfo.avatarUrl.isNotEmpty
-                          ? DecorationImage(
-                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                        fit: BoxFit.cover,
-                      )
-                          : null,
-                    ),
-                    child: userInfo.avatarUrl.isEmpty
-                        ? Icon(Icons.person, size: 40)
-                        : null,
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // User Info Section
+                  Row(
                     children: [
-                      Text(
-                        userInfo.username,
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      // Avatar
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: userInfo.avatarUrl.isNotEmpty
+                              ? DecorationImage(
+                            image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                            fit: BoxFit.cover,
+                          )
+                              : null,
+                        ),
+                        child: userInfo.avatarUrl.isEmpty
+                            ? Icon(Icons.person, size: 40)
+                            : null,
                       ),
-                      Row(
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
-                          SizedBox(width: 4),
-                          Text("${userInfo.coins}"),
+                          Text(
+                            userInfo.username,
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                              SizedBox(width: 4),
+                              Text("${userInfo.coins}"),
+                            ],
+                          ),
                         ],
                       ),
                     ],
+                  ),
+                  // Home Button Section
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>MainScreen()
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200], // Light background for the button
+                        borderRadius: BorderRadius.circular(20), // Rounded corners
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.home, color: Colors.black87),
+                          SizedBox(width: 6),
+                          Text(
+                            "Home",
+                            style: TextStyle(color: Colors.black87, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -441,50 +483,70 @@ class _MainScreenState extends State<MainScreen> {
         child: Stack(
           children: [
             Positioned(
-              top: 48,
-              right: 30,
-              child: Row(
-                children: [
-                  SizedBox(width: 8),
-                  Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                  SizedBox(width: 8),
-                  Text('${userInfo.coins}', style: TextStyle(color: Colors.white, fontSize: 18)),
-                ],
-              ),
-            ),
-            Positioned(
               top: 40,
               left: 30,
-              child: Row(
-                children: [
-                  SizedBox(width: 8),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
-                      image: userInfo.avatarUrl.isNotEmpty
-                          ? DecorationImage(
-                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                        fit: BoxFit.cover,
-                      )
-                          : null,
+              right: 30,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: _openProfileDrawer,
-                        child: userInfo.avatarUrl.isEmpty
-                            ? Icon(Icons.person, color: Colors.white)
-                            : null,
-                      ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[300],
+                            image: userInfo.avatarUrl.isNotEmpty
+                                ? DecorationImage(
+                              image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                              fit: BoxFit.cover,
+                            )
+                                : null,
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: _openProfileDrawer,
+                              child: userInfo.avatarUrl.isEmpty
+                                  ? Icon(Icons.person, color: Colors.black)
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          userInfo.username,
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(userInfo.username, style: TextStyle(color: Colors.white, fontSize: 18)),
-                ],
+                    Row(
+                      children: [
+                        Icon(Icons.monetization_on, color: Colors.amber[700], size: 24),
+                        SizedBox(width: 6),
+                        Text(
+                          '${userInfo.coins}',
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             Center(

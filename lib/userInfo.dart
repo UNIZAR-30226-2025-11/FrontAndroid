@@ -9,6 +9,7 @@ import 'SessionManager.dart';
 import 'customize.dart';
 import 'editProfile.dart';
 import 'friends.dart';
+import 'homePage.dart';
 import 'login.dart';
 import 'models/models.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -217,195 +218,251 @@ class UserInfo {
 
 
 // Método para mostrar la barra de perfil en cualquier pantalla
-Widget buildProfileBar(BuildContext context, Function openProfileDrawer) {
-  return Stack(
-    children: [
-      // Monedas (esquina superior derecha)
-      Positioned(
-        top: 48,
-        right: 30,
-        child: Row(
-          children: [
-            SizedBox(width: 8),
-            Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-            SizedBox(width: 8),
-            Text('$_coins',
-                style: TextStyle(color: Colors.white, fontSize: 18)),
-          ],
-        ),
+  Widget buildProfileBar(BuildContext context, Function openProfileDrawer) {
+    return Container(
+      margin: EdgeInsets.only(top: 20, left: 30, right: 30),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 6,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
-      // Avatar y nombre de usuario (esquina superior izquierda)
-      Positioned(
-        top: 40,
-        left: 30,
-        child: Row(
-          children: [
-            SizedBox(width: 8),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.2),
-                image: _avatarUrl.isNotEmpty
-                    ? DecorationImage(
-                        image: AssetImage('assets/images/avatar/$_avatarUrl.png'),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () => openProfileDrawer(),
-                  child: _avatarUrl.isEmpty
-                      ? Icon(Icons.person, color: Colors.white)
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Avatar + Username
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[300],
+                  image: _avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                    image: AssetImage('assets/images/avatar/$_avatarUrl.png'),
+                    fit: BoxFit.cover,
+                  )
                       : null,
                 ),
-              ),
-            ),
-            SizedBox(width: 8),
-            Text(_username,
-                style: TextStyle(color: Colors.white, fontSize: 18)),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-// Método para abrir el drawer de perfil (reusable en cualquier pantalla)
-static void openProfileDrawer(BuildContext context) {
-  final UserInfo userInfo = UserInfo();
-
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: userInfo.avatarUrl.isNotEmpty
-                        ? DecorationImage(
-                          image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                          fit: BoxFit.cover,
-                        )
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => openProfileDrawer(),
+                    child: _avatarUrl.isEmpty
+                        ? Icon(Icons.person, color: Colors.black)
                         : null,
                   ),
-                  child: userInfo.avatarUrl.isEmpty
-                      ? Icon(Icons.person, size: 40)
-                      : null,
                 ),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userInfo.username,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(width: 10),
+              Text(
+                _username,
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ],
+          ),
+          // Coins
+          Row(
+            children: [
+              Icon(Icons.monetization_on, color: Colors.amber[700], size: 24),
+              SizedBox(width: 6),
+              Text(
+                '$_coins',
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Método para crear el profile drawer en cualquier pantalla
+  static void openProfileDrawer(BuildContext context) {
+    final UserInfo userInfo = UserInfo();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with user info and Home button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // User Info
+                  Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: userInfo.avatarUrl.isNotEmpty
+                              ? DecorationImage(
+                            image: AssetImage(
+                                'assets/images/avatar/${userInfo.avatarUrl}.png'),
+                            fit: BoxFit.cover,
+                          )
+                              : null,
+                        ),
+                        child: userInfo.avatarUrl.isEmpty
+                            ? Icon(Icons.person, size: 40)
+                            : null,
+                      ),
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userInfo.username,
+                            style: TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              Icon(Icons.monetization_on,
+                                  color: Colors.yellow, size: 16),
+                              SizedBox(width: 4),
+                              Text("${userInfo.coins}"),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  // Home Button
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MainScreen()),
+                      );
+                    },
+                    child: Container(
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.home, color: Colors.black87),
+                          SizedBox(width: 6),
+                          Text(
+                            "Home",
+                            style: TextStyle(
+                                color: Colors.black87, fontSize: 14),
+                          ),
+                        ],
+                      ),
                     ),
-                    Row(
-                      children: [
-                        Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
-                        SizedBox(width: 4),
-                        Text("${userInfo.coins}"),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            Divider(height: 30),
-            ListTile(
-              leading: Icon(Icons.bar_chart),
-              title: Text("Statistics"),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => StatisticsScreen(
-                        username: userInfo.username,
-                      )),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Edit profile"),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => EditProfileScreen(
-                        username: userInfo.username,
-                      )),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.style),
-              title: Text("Customize"),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => CustomizeScreen(
-                        username: userInfo.username,
-                      )),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.shopping_cart),
-              title: Text("Shop"),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ShopScreen(
-                        username: userInfo.username,
-                      )),
-                );
-              },
-            ),
-            ListTile(
+                  ),
+                ],
+              ),
+              Divider(height: 30),
+              ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text("Statistics"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => StatisticsScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text("Edit profile"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => EditProfileScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.style),
+                title: Text("Customize"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CustomizeScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.shopping_cart),
+                title: Text("Shop"),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ShopScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                },
+              ),
+              ListTile(
                 leading: Icon(Icons.people),
                 title: Text("Friends"),
-                onTap:(){
+                onTap: () {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                         builder: (context) => FriendsScreen()),
                   );
-                }
-            ),
-            ListTile(
+                },
+              ),
+              ListTile(
                 leading: Icon(Icons.logout),
                 title: Text("Logout"),
                 onTap: () {
                   _showLogOutBar(context);
-                }
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
 // Método para mostrar la barra de confirmación de cierre de sesión
 static void _showLogOutBar(BuildContext context) {

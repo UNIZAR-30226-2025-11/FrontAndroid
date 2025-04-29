@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'SessionManager.dart';
 import 'editProfile.dart';
+import 'homePage.dart';
 import 'login.dart';
 import 'userInfo.dart';  // Import UserInfo class
 import 'customize.dart';  // Import Customize screen
@@ -195,7 +196,7 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-  // Updated profile drawer method that matches StatisticsScreen
+  // Método para abrir el drawer de perfil
   void _openProfileDrawer() {
     showModalBottomSheet(
       context: context,
@@ -210,40 +211,82 @@ class _ShopScreenState extends State<ShopScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: userInfo.avatarUrl.isNotEmpty
-                          ? DecorationImage(
-                        image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
-                        fit: BoxFit.cover,
-                      )
-                          : null,
-                    ),
-                    child: userInfo.avatarUrl.isEmpty
-                        ? Icon(Icons.person, size: 40)
-                        : null,
-                  ),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // User Info Section
+                  Row(
                     children: [
-                      Text(
-                        userInfo.username,
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      // Avatar
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: userInfo.avatarUrl.isNotEmpty
+                              ? DecorationImage(
+                            image: AssetImage('assets/images/avatar/${userInfo.avatarUrl}.png'),
+                            fit: BoxFit.cover,
+                          )
+                              : null,
+                        ),
+                        child: userInfo.avatarUrl.isEmpty
+                            ? Icon(Icons.person, size: 40)
+                            : null,
                       ),
-                      Row(
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
-                          SizedBox(width: 4),
-                          Text("${coins}"),
+                          Text(
+                            userInfo.username,
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              Icon(Icons.monetization_on, color: Colors.yellow, size: 16),
+                              SizedBox(width: 4),
+                              Text("${userInfo.coins}"),
+                            ],
+                          ),
                         ],
                       ),
                     ],
+                  ),
+                  // Home Button Section
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => MainScreen()
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200], // Light background for the button
+                        borderRadius: BorderRadius.circular(20), // Rounded corners
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.home, color: Colors.black87),
+                          SizedBox(width: 6),
+                          Text(
+                            "Home",
+                            style: TextStyle(color: Colors.black87, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -255,10 +298,13 @@ class _ShopScreenState extends State<ShopScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => StatisticsScreen(
+                        builder: (context) =>StatisticsScreen(
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
@@ -272,26 +318,42 @@ class _ShopScreenState extends State<ShopScreen> {
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
                 leading: Icon(Icons.style),
                 title: Text("Customize"),
-                onTap: () {
-                  Navigator.pushReplacement(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (context) => CustomizeScreen(
                           username: userInfo.username,
                         )),
                   );
+                  setState(() {
+                    print('custome set state');
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
                 leading: Icon(Icons.shopping_cart),
                 title: Text("Shop"),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ShopScreen(
+                          username: userInfo.username,
+                        )),
+                  );
+                  setState(() {
+                    //_initialize();
+                  });
                 },
               ),
               ListTile(
@@ -303,6 +365,9 @@ class _ShopScreenState extends State<ShopScreen> {
                       MaterialPageRoute(
                           builder: (context) => FriendsScreen()),
                     );
+                    setState(() {
+                      //_initialize();
+                    });
                   }
               ),
               ListTile(
@@ -318,7 +383,6 @@ class _ShopScreenState extends State<ShopScreen> {
       },
     );
   }
-
   // Add logout confirmation method from Statistics screen
   void _showLogOutBar() {
     // First, close the drawer
@@ -382,8 +446,10 @@ class _ShopScreenState extends State<ShopScreen> {
             ? Center(child: CircularProgressIndicator(color: Colors.white))
             : Stack(
           children: [
-            // Profile bar from userInfo
-            userInfo.buildProfileBar(context, _openProfileDrawer),
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0), // Adjust as needed
+              child: userInfo.buildProfileBar(context, _openProfileDrawer),
+            ),
 
             // Main content
             SafeArea(

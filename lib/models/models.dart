@@ -379,7 +379,7 @@ class FrontendGameSelectPlayerResponseJSON {
     return {
       'error': error,
       'errorMsg': errorMsg,
-      'userId': playerUsername,
+      'playerUsername': playerUsername,
       'lobbyId': lobbyId,
     };
   }

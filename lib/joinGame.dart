@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 import 'SessionManager.dart';
+import 'UserInfo.dart';
 
 class JoinGameScreen extends StatefulWidget {
   final IO.Socket socket;
@@ -22,12 +23,20 @@ class _JoinGameState extends State<JoinGameScreen> {
   late Future<String?> _usernameFuture;
   String username = ""; // Valor predeterminado
   int coins=-1;
+  final UserInfo userInfo = UserInfo();
 
   @override
   void initState() {
     super.initState();
-    _usernameFuture = _initializeUsername();
-    _initializeCoins();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    await userInfo.initialize();
+    setState(() {
+      username = userInfo.username;
+      coins = userInfo.coins;
+    });
   }
 
   void joinGame() {
@@ -113,6 +122,11 @@ class _JoinGameState extends State<JoinGameScreen> {
     }
   }
 
+  // Método para abrir el drawer de perfil
+  void _openProfileDrawer() {
+    UserInfo.openProfileDrawer(context);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -121,32 +135,9 @@ class _JoinGameState extends State<JoinGameScreen> {
       backgroundColor: Color(0xFF9D0514),
       body: Stack(
         children: [
-          Positioned(
-            top: 48,
-            right: 30,
-            child: Row(
-              children: [
-                SizedBox(width: 8),
-                Icon(Icons.monetization_on, color: Colors.yellow, size: 30),
-                SizedBox(width: 8),
-                Text('$coins',
-                    style: TextStyle(color: Colors.white, fontSize: 18)),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 40,
-            left: 30,
-            child: Row(
-              children: [
-                SizedBox(width: 8),
-                Icon(Icons.person,size: 30, color: Colors.white), // Botón de perfil
-                  //onPressed: _openProfileDrawer,
-                SizedBox(width: 8),
-                Text(username,
-                    style: TextStyle(color: Colors.white, fontSize: 18)),
-              ],
-            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 20.0), // Adjust as needed
+            child: userInfo.buildProfileBar(context, _openProfileDrawer),
           ),
           Center(
             child: Column(
