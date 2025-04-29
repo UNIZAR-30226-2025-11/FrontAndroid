@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -29,6 +30,10 @@ class _MainScreenState extends State<MainScreen> {
   //late Future<void> _initFuture;
   final UserInfo userInfo = UserInfo();
   bool _loading = true;
+  Map<String, dynamic>? initialGameState;
+  late bool newGame;
+  late void Function(dynamic) _onGameState;
+
 
   @override
   void initState() {
@@ -37,42 +42,98 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _initialize() async {
+    // Set this flag first to avoid multiple initializations
+    if (_loading == false) return;
+
+    newGame = false;
     await userInfo.initialize();
+
+    // Check mounted before continuing with socket initialization
+    if (!mounted) return;
+
     await _initializeSocket();
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
-    }
+
+    // Check mounted again before updating state
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+    });
+
+    // Final mounted check before setting up listeners
+    if (!mounted) return;
     setupFriendJoinLobbyRequestListener(
-        socket: socket,
-        context: context,
-        username: userInfo.username,
-        onAccept: (String lobbyId)
-    {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) =>
-              WaitingScreen(
-                socket: socket,
-                lobbyId: lobbyId,
-              ),
-        ),
+      socket: socket,
+      context: context,
+      username: userInfo.username,
+      onAccept: (String lobbyId) {
+        // Always check mounted in callbacks
+        if (!mounted) return;
 
-      );
-      setState(() {
-        _initialize();
-      });
-    }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => WaitingScreen(
+              socket: socket,
+              lobbyId: lobbyId,
+            ),
+          ),
+        );
+        // Removed the second _initialize call which could cause issues
+      },
     );
+  }
 
+  Future<void> _waitForSocketConnection({Duration timeout = const Duration(seconds: 5)}) async {
+    final completer = Completer<void>();
 
+    // If already connected, do nothing
+    if (socket.connected) {
+      print("⚠️ Socket already connected");
+      return;
+    }
+
+    // If in process of connecting, avoid duplication
+    if (socket.disconnected == false) {
+      print("🔄 Socket already trying to connect, waiting...");
+    } else {
+      // Disconnect if in an inconsistent state
+      try {
+        socket.dispose(); // or socket.disconnect(), according to your implementation
+      } catch (_) {
+        print("⚠️ Error closing previous socket");
+      }
+
+      // Reconfigure socket before connecting
+      socket.connect();
+    }
+
+    socket.onConnect((_) {
+      if (!completer.isCompleted) {
+        print("✅ Socket connected (await)");
+        completer.complete();
+      }
+    });
+
+    socket.onConnectError((error) {
+      if (!completer.isCompleted) {
+        completer.completeError("❌ Socket connection error: $error");
+      }
+    });
+
+    return completer.future.timeout(timeout, onTimeout: () {
+      throw TimeoutException("⏳ Timeout waiting for socket connection");
+    });
   }
 
   Future<void> _initializeSocket() async {
     try {
+      // Check mounted before proceeding
+      if (!mounted) return;
+
       // Await the token since it's a Future
       final String? token = await SessionManager.getSessionData();
+
+      // Check mounted again after the async operation
+      if (!mounted) return;
 
       if (token == null || token.isEmpty) {
         print("Warning: Token is null or empty");
@@ -82,9 +143,6 @@ class _MainScreenState extends State<MainScreen> {
               context,
               MaterialPageRoute(builder: (context) => LoginScreen())
           );
-          setState(() {
-            _initialize();
-          });
         }
         return;
       }
@@ -98,9 +156,9 @@ class _MainScreenState extends State<MainScreen> {
               .setExtraHeaders({
             'Cookie': 'access_token=$token'
           })
-          //.enableForceNew()
               .disableAutoConnect()
-              .build());
+              .build()
+      );
 
       // Set up error handling for connection
       socket.onConnectError((error) {
@@ -113,7 +171,11 @@ class _MainScreenState extends State<MainScreen> {
         }
       });
 
-      socket.connect();
+      await _waitForSocketConnection();
+      print(socket.connected);
+
+      // Check mounted before setting up listeners
+      if (!mounted) return;
 
       // Set up socket listeners
       _setupSocketListeners();
@@ -128,11 +190,17 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _setupSocketListeners() {
+    // Check mounted before setting up any listeners
+    if (!mounted) return;
+
     // Listen for create-lobby response
     socket.on("create-lobby", (dynamic response) {
+      // Check mounted in the callback
+      if (!mounted) return;
+
       if (response != null && response['error'] == false) {
         String lobbyId = response['lobbyId'];
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => StartGameScreen(
@@ -142,9 +210,6 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         );
-        setState(() {
-           _initialize();
-        });
       } else {
         String errorMsg = response != null
             ? response['errorMsg']
@@ -154,12 +219,49 @@ class _MainScreenState extends State<MainScreen> {
         );
       }
     });
+
+    if (!newGame) {
+      print("📡 Waiting for 'game-state'");
+
+      _onGameState = (data) {
+        print("✅ Received 'game-state': $data");
+
+        // Check mounted in the callback
+        if (!mounted) return;
+
+        setState(() {
+          initialGameState = data;
+        });
+
+        socket.off('game-state', _onGameState);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GameScreen(
+              socket: socket,
+              lobbyId: data['lobbyId'],
+              initialGameState: initialGameState ?? {},
+              username: userInfo.username,
+            ),
+          ),
+        );
+      };
+
+      socket.on('game-state', _onGameState);
+    }
   }
+
 
   @override
   void dispose() {
-    socket.disconnect();
-    socket.dispose();
+    print('dispose homePage');
+    if (newGame==true){
+      //socket.disconnect();
+      //socket.dispose();
+    }
+    socket.off('create-lobby');
+    socket.off('game-state', _onGameState);
     super.dispose();
   }
 
@@ -517,6 +619,12 @@ class _MainScreenState extends State<MainScreen> {
                   SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: () async {
+                      newGame = true;
+                      print("newGAME");
+                      //socket.off('game-state');
+                      //socket.disconnect();
+                      //socket.dispose();
+                      socket.off('game-state', _onGameState);
                       // Se ejecuta cuando se crea una nueva sala
                       int? players = await _showPlayerSelectionDialog(context);
                     },
@@ -525,7 +633,14 @@ class _MainScreenState extends State<MainScreen> {
                   SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
+                      newGame = true;
+                      print("newGAME");
+                      //socket.off('game-state');
+                      //socket.disconnect();
+                      //socket.dispose();
+
+                      socket.off('game-state', _onGameState);
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (context) => JoinGameScreen(
