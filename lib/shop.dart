@@ -80,6 +80,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
       setState(() {
         coins = int.parse(data['coins'].toString());
+        userInfo.refreshData();
         isLoading = false;
       });
     } catch (e) {
@@ -179,19 +180,78 @@ class _ShopScreenState extends State<ShopScreen> {
       print(res.body);
       if (res.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Item purchased successfully!')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 12),
+                Text(
+                  'Item purchased successfully!',
+                  style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.white,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: Colors.green, width: 1),
+            ),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.green,
+              onPressed: () {},
+            ),
+          ),
         );
-        // Refresh data
-        fetchUserData();
-        fetchShopItems();
+        setState(() {
+        });
+
+        await fetchUserData();
+        await fetchShopItems();
+
       } else if (res.statusCode == 400) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Could not complete the purchase')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red),
+                SizedBox(width: 12),
+                Text(
+                  'Could not complete the purchase',
+                  style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.white,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: Colors.red, width: 1),
+            ),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error buying item: ${e.toString()}')),
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.red),
+              SizedBox(width: 12),
+              Text(
+                'Could not complete the purchase',
+                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.white,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
       );
     }
   }
@@ -405,7 +465,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => LoginScreen()),
+                        builder: (context) => MainScreen()),
                   );
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
@@ -419,7 +479,7 @@ class _ShopScreenState extends State<ShopScreen> {
             ],
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.black12,
+          backgroundColor: Color(0xFF3D0E40),
           duration: Duration(days: 365),
         ),
       );
