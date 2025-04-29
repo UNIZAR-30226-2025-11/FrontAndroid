@@ -20,18 +20,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final _storage = FlutterSecureStorage();
 
-  // FIXME: probar
   Future<void> checkSession() async {
     String? token = await SessionManager.getSessionData();
-    String? username = await SessionManager
-        .getUsername(); // Esperar el valor del nombre de usuario
+    String? username = await SessionManager.getUsername();
 
     if (token != null) {
       // Si hay un token guardado, redirige al usuario
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-            builder: (context) => MainScreen()), // Pasar el username de forma segura
+            builder: (context) => MainScreen()),
       );
     }
   }
@@ -39,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    checkSession(); // FIXME: probar
+    checkSession();
   }
 
   void _showSnackBar(String message) {
@@ -73,9 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final response = await http.post(
       Uri.parse(URL),
-
       headers: {"Content-Type": "application/json"},
-
       body: jsonEncode({
         "username": usernameController.text,
         "password": passwordController.text,
@@ -115,88 +111,193 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final token = await SessionManager.getSessionData();
 
-    // Esto es un ejemplo de conexi'on
-    //final res = await http.get(Uri.parse('http://10.0.2.2:8000/users'),
-    //  headers: {
-    //    'Cookie': 'access_token=$token',
-    //  }
-    //);
-    //print(res.body);
-
     print("Login successful");
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-          builder: (context) => MainScreen(
-
-              )), // Placeholder
+          builder: (context) => MainScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: AppBar(title: Text('Log In')),
-      backgroundColor: Color(0xFF9D0514),
-      body: Center(
-        child: Container(
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white, // Fondo blanco
-            borderRadius: BorderRadius.circular(12), // Bordes redondeados
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                spreadRadius: 2,
+      backgroundColor: Color(0xFF3D0E40), // Fondo rojo oscuro para contrastar con el signup
+      body: Stack(
+        children: [
+          // Elementos decorativos - círculos e iconos
+          ...List.generate(
+            15,
+                (index) => Positioned(
+              left: (index * 67) % MediaQuery.of(context).size.width,
+              top: (index * 83) % MediaQuery.of(context).size.height,
+              child: Opacity(
+                opacity: 0.3,
+                child: index % 3 == 0
+                    ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                    : index % 3 == 1
+                    ? Icon(Icons.album, size: 25, color: Colors.purple[300])
+                    : Icon(Icons.pets, size: 20, color: Colors.red[100]),
               ),
-            ],
+            ),
           ),
-          width: MediaQuery.of(context).size.width * 0.85, // Ajuste de ancho
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: usernameController,
-                decoration: InputDecoration(labelText: "Username"),
+
+          Center(
+            child: Container(
+              width: 350,
+              padding: EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.85), // Contenedor oscuro
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
-              TextField(
-                controller: passwordController,
-                decoration: InputDecoration(labelText: "Password"),
-                obscureText: true,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: login,
-                child: Text("Log In"),
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Don't have an account? "),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignUpScreen()),
-                      );
-                    },
+                  // Iconos en la parte superior
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(Icons.pets, size: 24, color: Colors.grey[400]),
+                      Icon(Icons.pets, size: 24, color: Colors.grey[400]),
+                    ],
+                  ),
+
+                  SizedBox(height: 16),
+
+                  // Texto de Welcome Back
+                  Text(
+                    'Welcome Back',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFF88370), // Color salmón
+                    ),
+                  ),
+
+                  Divider(
+                    color: Color(0xFFF88370).withOpacity(0.5),
+                    thickness: 1,
+                    height: 32,
+                  ),
+
+                  // Campo de usuario
+                  SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
                     child: Text(
-                      "Sign up",
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
+                      'Username',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: usernameController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your username',
+                      hintStyle: TextStyle(color: Colors.grey[500]),
+                      filled: true,
+                      fillColor: Colors.grey[800],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+
+                  // Campo de contraseña
+                  SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Password',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your password',
+                      hintStyle: TextStyle(color: Colors.grey[500]),
+                      filled: true,
+                      fillColor: Colors.grey[800],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+
+                  // Botón de login
+                  SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFF88370), // Botón color salmón
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Log In',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Enlace para registrarse
+                  SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SignUpScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF5EBCD0), // Botón azul
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        "Don't have an account? Sign Up",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
