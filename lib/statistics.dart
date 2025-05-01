@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 
 import 'SessionManager.dart';
+import 'config.dart';
 import 'models/models.dart';
 import 'userInfo.dart';
 import 'editProfile.dart';
@@ -62,7 +63,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       }
 
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
+          Uri.parse('$BACKEND_URL/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }

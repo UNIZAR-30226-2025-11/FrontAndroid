@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_example/SessionManager.dart';
+import 'package:flutter_example/config.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'homePage.dart';
@@ -57,11 +58,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // Ver comments en login.dart/login()
-    const URL = "http://10.0.2.2:8000/register";
-
     final response = await http.post(
-      Uri.parse(URL),
+      Uri.parse('$BACKEND_URL/register'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,

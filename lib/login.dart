@@ -3,10 +3,10 @@ import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'config.dart';
 import 'homePage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_example/SessionManager.dart';
-import 'dart:io';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -69,10 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    const URL = "http://10.0.2.2:8000/login";
-
     final response = await http.post(
-      Uri.parse(URL),
+      Uri.parse('$BACKEND_URL/login'),
 
       headers: {"Content-Type": "application/json"},
 
@@ -112,16 +110,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await SessionManager.saveSessionData(cookies['access_token']!);
       await SessionManager.saveUsername(usernameController.text);
     }
-
-    final token = await SessionManager.getSessionData();
-
-    // Esto es un ejemplo de conexi'on
-    //final res = await http.get(Uri.parse('http://10.0.2.2:8000/users'),
-    //  headers: {
-    //    'Cookie': 'access_token=$token',
-    //  }
-    //);
-    //print(res.body);
 
     print("Login successful");
 

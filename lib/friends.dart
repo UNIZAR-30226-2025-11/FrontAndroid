@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -10,7 +11,6 @@ import 'shop.dart';
 import 'login.dart';
 import 'statistics.dart';
 
-const String baseUrl = 'http://10.0.2.2:8000';
 const Color primaryColor = Color(0xFF9D0514);
 
 class FriendsScreen extends StatefulWidget {
@@ -221,7 +221,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         throw Exception("Authentication token not available");
       }
       final response = await http.get(
-          Uri.parse('$baseUrl/friends'),
+          Uri.parse('$BACKEND_URL/friends'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -269,7 +269,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         throw Exception("Authentication token not available");
       }
       final response = await http.delete(
-        Uri.parse('$baseUrl/friends'),
+        Uri.parse('$BACKEND_URL/friends'),
         headers: {'Content-Type': 'application/json',
           'Cookie': 'access_token=$token',},
         body: jsonEncode({'resp': {
@@ -759,7 +759,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       final String? currentUsername = await SessionManager.getUsername();
 
       final response = await http.get(
-          Uri.parse('$baseUrl/users'),
+          Uri.parse('$BACKEND_URL/users'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -803,7 +803,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.get(
-          Uri.parse('$baseUrl/users'), // sin query aquí
+          Uri.parse('$BACKEND_URL/users'), // sin query aquí
           headers: {
             'Cookie': 'access_token=$token',
           });
@@ -853,7 +853,7 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.post(
-        Uri.parse('$baseUrl/friends'),
+        Uri.parse('$BACKEND_URL/friends'),
         headers: {
           'Content-Type': 'application/json',
           'Cookie': 'access_token=$token',
@@ -1302,7 +1302,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
 
     try {
       final String? token = await SessionManager.getSessionData();
-      final response = await http.get(Uri.parse('$baseUrl/friends/request'),
+      final response = await http.get(Uri.parse('$BACKEND_URL/friends/request'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -1346,7 +1346,7 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.post(
-        Uri.parse('$baseUrl/friends/request'),
+        Uri.parse('$BACKEND_URL/friends/request'),
         headers: {'Content-Type': 'application/json',
           'Cookie': 'access_token=$token',},
         body: jsonEncode(

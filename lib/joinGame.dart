@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_example/config.dart';
 import 'package:flutter_example/lobby.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -79,7 +80,7 @@ class _JoinGameState extends State<JoinGameScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
+          Uri.parse('$BACKEND_URL/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }

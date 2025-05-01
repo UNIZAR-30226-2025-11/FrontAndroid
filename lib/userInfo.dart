@@ -6,6 +6,7 @@ import 'package:flutter_example/shop.dart';
 import 'package:flutter_example/statistics.dart';
 import 'package:http/http.dart' as http;
 import 'SessionManager.dart';
+import 'config.dart';
 import 'customize.dart';
 import 'editProfile.dart';
 import 'friends.dart';
@@ -72,7 +73,7 @@ class UserInfo {
       }
 
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
+          Uri.parse('$BACKEND_URL/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -107,7 +108,7 @@ class UserInfo {
       }
 
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/shop/owned'),
+        Uri.parse('$BACKEND_URL/shop/owned'),
         headers: {
           'Cookie': 'access_token=$token',
         },
@@ -170,7 +171,7 @@ class UserInfo {
       }
 
       final response = await http.put(
-        Uri.parse('http://10.0.2.2:8000/shop/owned'),
+        Uri.parse('$BACKEND_URL/shop/owned'),
         headers: {
           'Cookie': 'access_token=$token',
           'Content-Type': 'application/json',
