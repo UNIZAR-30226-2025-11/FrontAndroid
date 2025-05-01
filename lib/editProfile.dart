@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_example/config.dart';
 
 import 'SessionManager.dart';
 import 'package:http/http.dart' as http;
@@ -61,7 +62,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.put(
-        Uri.parse('http://10.0.2.2:8000/user'),
+        Uri.parse('$BACKEND_URL/user'),
         headers: {
           'Content-Type': 'application/json',
           'Cookie': 'access_token=$token',
@@ -93,7 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.delete(
-        Uri.parse('http://10.0.2.2:8000/user'),
+        Uri.parse('$BACKEND_URL/user'),
         headers: {
           'Cookie': 'access_token=$token',
         },

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_example/config.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_example/game.dart';
 
@@ -119,7 +120,7 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
+          Uri.parse('$BACKEND_URL/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }

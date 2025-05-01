@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_example/UserInfo.dart';
+import 'package:flutter_example/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -10,6 +10,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'SessionManager.dart';
 import 'homePage.dart';
 import 'models/models.dart';
+import 'userInfo.dart';
 
 class GameScreen extends StatefulWidget {
   final IO.Socket socket;
@@ -130,7 +131,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     try {
       final String? token = await SessionManager.getSessionData();
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
+          Uri.parse('$BACKEND_URL/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }
