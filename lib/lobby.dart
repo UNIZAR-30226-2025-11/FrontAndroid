@@ -5,7 +5,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_example/game.dart';
 
 import 'SessionManager.dart';
-import 'UserInfo.dart';
+import 'userInfo.dart';
 import 'homePage.dart';
 import 'models/models.dart';
 import 'package:http/http.dart' as http;
