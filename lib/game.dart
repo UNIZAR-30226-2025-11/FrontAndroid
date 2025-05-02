@@ -1243,7 +1243,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     isLabelVisible: _messages.isNotEmpty && !_isChatVisible,
                     child: Icon(
                       Icons.chat_bubble_outline,
-                      color: Color(0xFF9D0514),
+                      color: Color(0xFF3D0E40),
                       size: 28,
                     ),
                   ),
@@ -1275,7 +1275,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     // Encabezado del chat
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      color: Color(0xFF9D0514),
+                      color: Color(0xFF3D0E40),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1342,7 +1342,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF9D0514),
+                                            color: Color(0xFF3D0E40),
                                           ),
                                         ),
                                       ),
@@ -1400,7 +1400,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.send, color: Color(0xFF9D0514)),
+                            icon: Icon(Icons.send, color:Color(0xFF3D0E40)),
                             onPressed: _sendChatMessage,
                           ),
                         ],

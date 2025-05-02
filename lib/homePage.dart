@@ -347,14 +347,16 @@ class _MainScreenState extends State<MainScreen> {
                 onPressed: () {
                   ScaffoldMessenger.of(mainContext).hideCurrentSnackBar();
                   SessionManager.removeSessionData();
+                  socket.dispose();
+                  socket.disconnect();
                   Navigator.pushReplacement(
                     mainContext,
                     MaterialPageRoute(
                         builder: (context) => MainScreen()),
                   );
-                  setState(() {
+                  //setState(() {
                      //_initialize();
-                  });
+                  //});
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
               ),
