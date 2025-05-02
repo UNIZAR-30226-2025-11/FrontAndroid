@@ -3,6 +3,7 @@ import 'package:flutter_example/signup.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'config.dart';
 import 'homePage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_example/SessionManager.dart';
@@ -67,10 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    const URL = "http://10.0.2.2:8000/login";
-
     final response = await http.post(
-      Uri.parse(URL),
+      Uri.parse('$BACKEND_URL/login'),
+
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username": usernameController.text,

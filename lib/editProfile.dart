@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_example/config.dart';
 import 'package:flutter_example/shop.dart';
 import 'package:flutter_example/statistics.dart';
 
@@ -66,7 +67,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.put(
-        Uri.parse('http://10.0.2.2:8000/user'),
+        Uri.parse('$BACKEND_URL/user'),
         headers: {
           'Content-Type': 'application/json',
           'Cookie': 'access_token=$token',
@@ -98,7 +99,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final String? token = await SessionManager.getSessionData();
       final response = await http.delete(
-        Uri.parse('http://10.0.2.2:8000/user'),
+        Uri.parse('$BACKEND_URL/user'),
         headers: {
           'Cookie': 'access_token=$token',
         },
@@ -336,7 +337,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-
   // Método para mostrar la barra de confirmación de cierre de sesión
   void _showLogOutBar() {
     // Primero, cierra el drawer
@@ -359,7 +359,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => MainScreen()),
+                        builder: (context) => LoginScreen()),
                   );
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),

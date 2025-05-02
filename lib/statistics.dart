@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 
 import 'SessionManager.dart';
+import 'config.dart';
 import 'homePage.dart';
 import 'models/models.dart';
 import 'userInfo.dart';
@@ -63,7 +64,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       }
 
       final res = await http.get(
-          Uri.parse('http://10.0.2.2:8000/user'),
+          Uri.parse('$BACKEND_URL/user'),
           headers: {
             'Cookie': 'access_token=$token',
           }
@@ -197,16 +198,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 leading: Icon(Icons.bar_chart),
                 title: Text("Statistics"),
                 onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>StatisticsScreen(
-                          username: userInfo.username,
-                        )),
-                  );
-                  setState(() {
-                    _initialize();
-                  });
+                  Navigator.pop(context);
                 },
               ),
               ListTile(

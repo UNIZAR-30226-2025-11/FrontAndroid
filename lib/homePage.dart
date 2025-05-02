@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_example/config.dart';
 import 'package:flutter_example/lobby.dart';
 import 'package:flutter_example/shop.dart' as shop;
 import 'package:flutter_example/userInfo.dart';
@@ -150,7 +151,7 @@ class _MainScreenState extends State<MainScreen> {
       print("Connecting with token: ${token.substring(0, math.min(10, token.length))}...");
 
       socket = IO.io(
-          'http://10.0.2.2:8000',
+          BACKEND_URL,
           IO.OptionBuilder()
               .setTransports(['websocket'])
               .setExtraHeaders({
