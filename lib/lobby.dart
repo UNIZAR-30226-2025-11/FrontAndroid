@@ -97,64 +97,14 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
     _requestConnectedFriends();
   }
 
-  Future<String?> _initializeUsername() async {
-    try {
-      final String? user = await SessionManager.getUsername();
-      setState(() {
-        username = user ?? "";
-      });
-      return user;
-    } catch (e) {
-      print("Error initializing username: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Username error: $e"))
-        );
-      }
-      return "";
-    }
-  }
-
-  Future<void> _initializeCoins() async {
-    try {
-      final String? token = await SessionManager.getSessionData();
-      final res = await http.get(
-          Uri.parse('$BACKEND_URL/user'),
-          headers: {
-            'Cookie': 'access_token=$token',
-          }
-      );
-
-      print('Current username: $username');
-      final data = jsonDecode(res.body);
-
-      if (res.statusCode != 200) {
-        var errorMessage = data.containsKey('message')
-            ? data['message']
-            : "Something went wrong. Try later";
-
-        print(errorMessage);
-        return;
-      } else {
-        setState(() {
-          coins = int.parse(data['coins'].toString());
-        });
-        print("Found user, coins: $coins");
-      }
-    } catch (e) {
-      print("Error initializing coins: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Coins error: $e"))
-        );
-      }
-    }
-  }
 
   Future<void> _initializeUser() async {
     await userInfo.initialize();  // Initialize UserInfo
-    username = userInfo.username;
-    coins = userInfo.coins;
+    await userInfo.initialize();
+    setState(() {
+      username = userInfo.username;
+      coins = userInfo.coins;
+    });
   }
 
   void _requestConnectedFriends() {
@@ -240,8 +190,19 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF9D0514),
-      body: Stack(
+        backgroundColor: Color(0xFF9D0514),
+        body: Container(
+          decoration: userInfo.backgroundUrl.isNotEmpty
+              ? BoxDecoration(
+            image: DecorationImage(
+            image: AssetImage(
+            'assets/images/background/${userInfo.backgroundUrl}.png'),
+            fit: BoxFit.cover,
+            opacity: 0.5,
+            ),
+          )
+        : null,
+      child: Stack(
         children: [
           ...List.generate(
             15,
@@ -532,6 +493,7 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
           ),
         ],
       ),
+        )
     );
   }
 }
