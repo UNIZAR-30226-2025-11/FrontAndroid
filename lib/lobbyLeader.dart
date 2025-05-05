@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_example/UserInfo.dart';
+import 'package:flutter_example/userInfo.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_example/game.dart';
 

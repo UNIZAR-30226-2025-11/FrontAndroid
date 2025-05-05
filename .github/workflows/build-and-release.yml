@@ -30,7 +30,7 @@ jobs:
         run: flutter pub get
 
       - name: Build
-        run: flutter build apk --release --dart-define=BACKEND_URL=katboom.duckdns.org
+        run: flutter build apk --release --dart-define=BACKEND_URL=https://katboom.duckdns.org
 
       - name: Rename release binary
         run: mv build/app/outputs/apk/release/app-release.apk ./katboom.apk
