@@ -43,6 +43,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   List<MsgJSON> _messages = [];
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
+  int _lastReadMessageIndex = -1;
 
   final ScrollController _scrollController = ScrollController();
   List<int> selectedCards = [];
@@ -863,11 +864,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   void setupChatSocketListeners() {
     socket.on('get-messages', (data) {
+      print('new message');
       if (mounted) {
         setState(() {
           BackendGetMessagesJSON messagesData = BackendGetMessagesJSON.fromJson(data);
           if (!messagesData.error) {
+            int previousCount = _messages.length;
             _messages = messagesData.messages;
+
+          if (_isChatVisible) {
+            _lastReadMessageIndex = _messages.length - 1;
+          }
 
             // Desplaza automáticamente hasta el último mensaje
             Future.delayed(Duration(milliseconds: 100), () {
@@ -968,6 +975,63 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  Widget buildDeckCountDisplay() {
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.black.withOpacity(0.6),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Small card image
+        Container(
+          width: 40,
+          height: 55,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            image: DecorationImage(
+              image: AssetImage('assets/images/back_card.jpg'),
+              fit: BoxFit.cover,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 10),
+        // Card count display
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cards left:',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
+            Text(
+              '$cardsLeftInDeck',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1048,6 +1112,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
+            Positioned(
+              top:500,
+              left: MediaQuery.of(context).size.width / 2 - 60,
+              child: buildDeckCountDisplay(),
+            ),
             // Only display other players, not the current player
             if (players.isNotEmpty)
               Positioned(
@@ -1058,14 +1127,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             if (players.length >= 2)
               Positioned(
-                bottom: 400,
+                bottom: 440,
                 left: 15,
                 child: buildPlayerCard(players[1],
                     isCurrentTurn: players[1].playerUsername == turnUsername),
               ),
             if (players.length >= 3)
               Positioned(
-                bottom: 400,
+                bottom: 440,
                 right: 15,
                 child: buildPlayerCard(players[2],
                     isCurrentTurn: players[2].playerUsername == turnUsername),
@@ -1232,26 +1301,34 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 onTap: () {
                   setState(() {
                     _isChatVisible = !_isChatVisible;
+                    if (_isChatVisible) {
+                      _lastReadMessageIndex = _messages.length - 1;
+                    }
                   });
                 },
                 child: Container(
-                  padding: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
                     shape: BoxShape.circle,
                   ),
                   child: Badge(
-                    isLabelVisible: _messages.isNotEmpty && !_isChatVisible,
+                    isLabelVisible: _messages.isNotEmpty && !_isChatVisible && _messages.isNotEmpty && _lastReadMessageIndex < _messages.length - 1,
+                    largeSize: 25,
+                    smallSize: 16,
+                    padding: EdgeInsets.all(12),
+                    alignment: AlignmentDirectional.topEnd,
                     child: Icon(
                       Icons.chat_bubble_outline,
                       color: Color(0xFF3D0E40),
-                      size: 28,
+                      size: 30,
                     ),
                   ),
                 ),
               ),
             ),
 
+            // Panel deslizante del chat
             // Panel deslizante del chat
             AnimatedPositioned(
               duration: Duration(milliseconds: 300),
@@ -1271,150 +1348,140 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     ),
                   ],
                 ),
-                child: Column(
+                child: Stack(
                   children: [
-                    // Encabezado del chat
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      color: Color(0xFF3D0E40),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Chat',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.close, color: Colors.white),
-                            onPressed: () {
-                              setState(() {
-                                _isChatVisible = false;
-                              });
-                            },
-                          ),
-                        ],
+                    // Primero añade los íconos decorativos como fondo
+                    ...List.generate(
+                      15,
+                      (index) => Positioned(
+                        left: (index * 67) % 300, // Ajustar al ancho del chat
+                        top: (index * 83) % MediaQuery.of(context).size.height,
+                        child: Opacity(
+                          opacity: 0.1, // Más sutil para no interferir con la lectura
+                          child: index % 3 == 0
+                              ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                              : index % 3 == 1
+                                  ? Icon(Icons.album, size: 25, color: Colors.purple[300])
+                                  : Icon(Icons.pets, size: 20, color: Colors.purple[100]),
+                        ),
                       ),
                     ),
 
-                    // Lista de mensajes
-                    Expanded(
-                      child: _messages.isEmpty
-                          ? Center(
-                        child: Text(
-                          'No messages yet',
-                          style: TextStyle(color: Colors.grey),
+                    // Luego añade la columna con el contenido del chat
+                    Column(
+                      children: [
+                        // Encabezado del chat
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          color: Color(0xFF3D0E40),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Chat',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.close, color: Colors.white),
+                                onPressed: () {
+                                  setState(() {
+                                    _isChatVisible = false;
+                                    _lastReadMessageIndex = _messages.length - 1;
+                                    FocusScope.of(context).unfocus();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                      )
-                          : ListView.builder(
-                        controller: _chatScrollController,
-                        padding: EdgeInsets.all(10),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          final isMe = message.username == username;
 
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: 8),
-                            child: Align(
-                              alignment: isMe
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: Container(
-                                constraints: BoxConstraints(
-                                  maxWidth: 230,
-                                ),
-                                padding: EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: isMe ? Colors.blue.shade100 : Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (!isMe)
-                                      Padding(
-                                        padding: EdgeInsets.only(bottom: 4),
-                                        child: Text(
-                                          message.username,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF3D0E40),
-                                          ),
+                        // Lista de mensajes
+                        Expanded(
+                          child: _messages.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    'No messages yet',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  controller: _chatScrollController,
+                                  padding: EdgeInsets.all(10),
+                                  itemCount: _messages.length,
+                                  itemBuilder: (context, index) {
+                                    final message = _messages[index];
+                                    final isMe = message.username == username;
+
+                                    return Padding(
+                                      padding: EdgeInsets.only(bottom: 8),
+                                      child: Align(
+                                        alignment: isMe
+                                            ? Alignment.centerRight
+                                            : Alignment.centerLeft,
+                                        child: Container(
+                                          // Resto del código existente para mostrar mensajes
                                         ),
                                       ),
-                                    Text(message.msg),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      _formatDate(message.date),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                  ],
+                                    );
+                                  },
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                        ),
 
-                    // Input para enviar mensajes
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, -1),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _chatController,
-                              decoration: InputDecoration(
-                                hintText: 'Write a message...',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
+                        // Input para enviar mensajes
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(0, -1),
                               ),
-                              textInputAction: TextInputAction.send,
-                              onSubmitted: (_) => _sendChatMessage(),
-                            ),
+                            ],
                           ),
-                          IconButton(
-                            icon: Icon(Icons.send, color:Color(0xFF3D0E40)),
-                            onPressed: _sendChatMessage,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _chatController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Write a message...',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                  ),
+                                  textInputAction: TextInputAction.send,
+                                  onSubmitted: (_) => _sendChatMessage(),
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.send, color: Color(0xFF3D0E40)),
+                                onPressed: _sendChatMessage,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
           ],
-        ),
       ),
-    );
+    ));
   }
 
   Widget _buildTimerIndicator() {
@@ -1457,10 +1524,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         : (player.active ? Colors.white : Colors.grey[400]!);
 
     return Container(
-      margin: EdgeInsets.all(8.0),
-      padding: EdgeInsets.all(16.0),
-      height: 150,
-      width: 180,
+      margin: EdgeInsets.all(6.0),
+      padding: EdgeInsets.all(10.0),
+      height: 110,
+      width: 140,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(10),
@@ -1482,8 +1549,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             children: [
               player.playerAvatar.isNotEmpty
                   ? Container(
-                    width: 40,
-                    height: 40,
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       image: DecorationImage(
@@ -1501,12 +1568,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   child: Icon(
                     Icons.star,
                     color: Colors.yellow,
-                    size: 20,
+                    size: 15,
                   ),
                 ),
             ],
           ),
-          SizedBox(width: 16),
+          SizedBox(width: 10),
           // Player info
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1518,7 +1585,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   color: isCurrentTurn
                       ? Colors.black
                       : (player.active ? Colors.black : Colors.grey[600]),
-                  fontSize: 18,
+                  fontSize: 14,
                   fontWeight:
                       isCurrentTurn ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -1530,7 +1597,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   color: isCurrentTurn
                       ? Colors.black
                       : (player.active ? Colors.black : Colors.grey[600]),
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -1655,7 +1722,7 @@ void showCardPopup(BuildContext context, List<String> cardImagePaths) {
     },
   );
 
-  Future.delayed(const Duration(seconds: 1), () {
+  Future.delayed(const Duration(seconds: 5), () {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -1833,7 +1900,7 @@ class _BombExplosionDialogState extends State<BombExplosionDialog>
             });
 
             // Auto-dismiss after 2 more seconds
-            Future.delayed(const Duration(seconds: 2), () {
+            Future.delayed(const Duration(seconds: 5), () {
               if (mounted) Navigator.of(context).pop();
             });
           }
@@ -1894,7 +1961,7 @@ class BombDiffusedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Schedule dialog to close after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 5), () {
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     });
 
@@ -1933,7 +2000,7 @@ class FutureSeenDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Close the dialog after 1 second
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 5), () {
       Navigator.of(context).pop();
     });
 
@@ -1958,7 +2025,7 @@ class AttackDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 5), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -1989,7 +2056,7 @@ class SkipDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 5), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2020,7 +2087,7 @@ class FavorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 5), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2051,7 +2118,7 @@ class TwoWildDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 5), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2082,7 +2149,7 @@ class ThreeWildDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 1), () {
+    Future.delayed(Duration(seconds: 5), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
