@@ -49,14 +49,17 @@ class _StartGameScreenState2 extends State<WaitingScreen> {
 
         if (lobbyUpdate.disband) {
           print('Disband');
-          // Aquí podrías añadir lógica para volver a la pantalla principal
-          return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => MainScreen()
+            ),
+          );
+          //return;
         }
 
         setState(() {
-          players = (lobbyUpdate.players as List)
-              .map((player) => PlayerLobbyJSON.fromJson(player))
-              .toList();
+          players = lobbyUpdate.players;
         });
       } catch (e) {
         print('Error parsing lobby update: $e');
