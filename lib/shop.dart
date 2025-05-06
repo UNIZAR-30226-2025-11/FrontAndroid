@@ -565,12 +565,9 @@ class _ShopScreenState extends State<ShopScreen> {
                             // Determine image path based on category
                             String imagePath;
                             if (category.name.toLowerCase().contains('avatar')) {
-                              imagePath =
-                              'assets/images/avatar/${product.url}.png';
-                              print(imagePath);
+                              imagePath = 'assets/images/avatar/${product.url}.png';
                             } else {
-                              imagePath =
-                              'assets/images/background/${product.url}.png';
+                              imagePath = 'assets/images/background/${product.url}.png';
                             }
 
                             return ShopItemCard(
@@ -578,6 +575,7 @@ class _ShopScreenState extends State<ShopScreen> {
                               price: product.price,
                               imagePath: imagePath,
                               isBought: product.isBought,
+                              userCoins: coins,  // Pass the current coins
                               onBuy: () => buyItem(category.url, product.url),
                             );
                           },
@@ -628,6 +626,7 @@ class ShopItemCard extends StatelessWidget {
   final String imagePath;
   final bool isBought;
   final VoidCallback onBuy;
+  final int userCoins;
 
   const ShopItemCard({
     Key? key,
@@ -636,10 +635,14 @@ class ShopItemCard extends StatelessWidget {
     required this.imagePath,
     required this.isBought,
     required this.onBuy,
+    required this.userCoins,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Determine if user can afford the item
+    final bool canAfford = userCoins >= price;
+
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 4,
@@ -684,14 +687,17 @@ class ShopItemCard extends StatelessWidget {
                     isBought
                         ? const Chip(
                       label: Text('Owned'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.blue,
                       labelStyle: TextStyle(color: Colors.white),
                       padding: EdgeInsets.all(0),
                     )
                         : ElevatedButton(
                       onPressed: onBuy,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF9D0514),
+                        // Change color based on affordability
+                        backgroundColor: canAfford
+                            ? Colors.green
+                            : const Color(0xFF9D0514),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         minimumSize: const Size(60, 30),
                       ),
