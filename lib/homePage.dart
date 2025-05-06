@@ -89,6 +89,9 @@ class _MainScreenState extends State<MainScreen> {
     // If already connected, do nothing
     if (socket.connected) {
       print("⚠️ Socket already connected");
+      // NOTE: added for socket issues
+      socket.dispose();
+      socket.connect();
       return;
     }
 
