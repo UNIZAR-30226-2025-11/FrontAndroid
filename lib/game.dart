@@ -1113,7 +1113,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             ),
             Positioned(
-              top:500,
+              top:300,
               left: MediaQuery.of(context).size.width / 2 - 60,
               child: buildDeckCountDisplay(),
             ),
@@ -1127,14 +1127,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             if (players.length >= 2)
               Positioned(
-                bottom: 440,
+                bottom: 500,
                 left: 15,
                 child: buildPlayerCard(players[1],
                     isCurrentTurn: players[1].playerUsername == turnUsername),
               ),
             if (players.length >= 3)
               Positioned(
-                bottom: 440,
+                bottom: 500,
                 right: 15,
                 child: buildPlayerCard(players[2],
                     isCurrentTurn: players[2].playerUsername == turnUsername),
@@ -1722,7 +1722,7 @@ void showCardPopup(BuildContext context, List<String> cardImagePaths) {
     },
   );
 
-  Future.delayed(const Duration(seconds: 5), () {
+  Future.delayed(const Duration(seconds: 3), () {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -1900,7 +1900,7 @@ class _BombExplosionDialogState extends State<BombExplosionDialog>
             });
 
             // Auto-dismiss after 2 more seconds
-            Future.delayed(const Duration(seconds: 5), () {
+            Future.delayed(const Duration(seconds: 3), () {
               if (mounted) Navigator.of(context).pop();
             });
           }
@@ -1961,7 +1961,7 @@ class BombDiffusedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Schedule dialog to close after 2 seconds
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     });
 
@@ -2000,7 +2000,7 @@ class FutureSeenDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Close the dialog after 1 second
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 3), () {
       Navigator.of(context).pop();
     });
 
@@ -2025,7 +2025,7 @@ class AttackDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2056,7 +2056,7 @@ class SkipDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2087,7 +2087,7 @@ class FavorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2118,7 +2118,7 @@ class TwoWildDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2149,7 +2149,7 @@ class ThreeWildDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 5), () {
+    Future.delayed(Duration(seconds: 3), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
