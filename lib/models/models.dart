@@ -520,12 +520,14 @@ class BackendGameSelectNopeJSON {
   final String errorMsg;
   final String lobbyId;
   final int timeOut;
+  final String nopeAction;
 
   BackendGameSelectNopeJSON({
     required this.error,
     required this.errorMsg,
     required this.lobbyId,
     required this.timeOut,
+    required this.nopeAction,
   });
 
   factory BackendGameSelectNopeJSON.fromJson(Map<String, dynamic> json) {
@@ -534,6 +536,7 @@ class BackendGameSelectNopeJSON {
       errorMsg: json['errorMsg'],
       lobbyId: json['lobbyId'],
       timeOut: json['timeOut'],
+      nopeAction: json['nopeAction'],
     );
   }
 
@@ -543,6 +546,7 @@ class BackendGameSelectNopeJSON {
       'errorMsg': errorMsg,
       'lobbyId': lobbyId,
       'timeOut': timeOut,
+      'nopeAction':nopeAction,
     };
   }
 }

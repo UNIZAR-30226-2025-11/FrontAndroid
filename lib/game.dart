@@ -745,6 +745,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         BackendGameSelectNopeJSON nopeData = BackendGameSelectNopeJSON.fromJson(data);
         int timeLeft = nopeData.timeOut;
         bool hasNopeCard = playerCards.any((card) => card.type == 'Nope'); // This should be based on the player's actual card availability
+        String nopeAction = nopeData.nopeAction;
 
         // Check if the player has a Nope card
         if (!hasNopeCard) {
@@ -772,6 +773,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Text(nopeAction),
+                  SizedBox(height: 10),
                   Text('Do you want to play your Nope card?'),
                   SizedBox(height: 10),
                   Text('Time left: $timeLeft seconds',
@@ -1113,28 +1116,28 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             ),
             Positioned(
-              top:300,
+              top:330,
               left: MediaQuery.of(context).size.width / 2 - 60,
               child: buildDeckCountDisplay(),
             ),
             // Only display other players, not the current player
             if (players.isNotEmpty)
               Positioned(
-                top: 100,
+                top: 90,
                 left: MediaQuery.of(context).size.width / 2 - 60,
                 child: buildPlayerCard(players[0],
                     isCurrentTurn: players[0].playerUsername == turnUsername),
               ),
             if (players.length >= 2)
               Positioned(
-                bottom: 500,
+                bottom: 400,
                 left: 15,
                 child: buildPlayerCard(players[1],
                     isCurrentTurn: players[1].playerUsername == turnUsername),
               ),
             if (players.length >= 3)
               Positioned(
-                bottom: 500,
+                bottom: 400,
                 right: 15,
                 child: buildPlayerCard(players[2],
                     isCurrentTurn: players[2].playerUsername == turnUsername),
