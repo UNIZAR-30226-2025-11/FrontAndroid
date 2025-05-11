@@ -350,17 +350,36 @@ class _MainScreenState extends State<MainScreen> {
               TextButton(
                 onPressed: () {
                   ScaffoldMessenger.of(mainContext).hideCurrentSnackBar();
+                  
+                  // Clean up socket properly
+                  if (socket != null) {
+                    try {
+                      print("Cleaning up socket connections before logout");
+                      // Remove all listeners first
+                      socket.off('game-state');
+                      socket.off('create-lobby');
+                      
+                      // Then disconnect the socket
+                      socket.disconnect();
+                      
+                      // Finally dispose the socket
+                      socket.dispose();
+                      print("Socket cleanup complete");
+                    } catch (e) {
+                      print("Error during socket cleanup: $e");
+                    }
+                  }
+                  
+                  // Clear session data
                   SessionManager.removeSessionData();
-                  socket.dispose();
-                  socket.disconnect();
+                  
+                  // Navigate to login screen
                   Navigator.pushReplacement(
                     mainContext,
                     MaterialPageRoute(
-                        builder: (context) => MainScreen()),
+                      builder: (context) => LoginScreen()
+                    ),
                   );
-                  //setState(() {
-                     //_initialize();
-                  //});
                 },
                 child: Text("YES", style: TextStyle(color: Colors.white)),
               ),
