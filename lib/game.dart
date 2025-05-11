@@ -1018,6 +1018,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   );
 }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1098,6 +1100,36 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
+                      Positioned(
+            top: 100,
+            left: 20,
+            child: GestureDetector(
+              onTap: _showSurrenderConfirmation,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.red, width: 1.5),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.flag, color: Colors.white, size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Surrender',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
             Positioned(
               top:340,
               left: MediaQuery.of(context).size.width / 2 - 60,
@@ -1504,6 +1536,68 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           ],
       ),
     ));
+  }
+
+  void _showSurrenderConfirmation() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Color(0xFF3D0E40),
+        title: Text('Surrender Game', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to surrender? You will lose the game and won\'t earn any coins.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: Text('Surrender', 
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              )
+            ),
+            onPressed: () {
+              _surrender();
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+  // Añadir el método para enviar el evento de rendición
+  void _surrender() {
+    FrontendSurrenderJSON surrenderData = FrontendSurrenderJSON(
+      error: false,
+      errorMsg: "",
+      lobbyId: widget.lobbyId,
+    );
+    
+    socket.emit('surrender', surrenderData.toJson());
+    
+    // Mostrar un mensaje de confirmación
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('You surrendered the game'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 3),
+      ),
+    );
+    Future.delayed(Duration(seconds: 1), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+      );
+    });
   }
 
   Widget _buildTimerIndicator() {

@@ -1449,3 +1449,30 @@ class FrontendResponseFriendRequestEnterLobbyJSON {
   }
 }
 
+class FrontendSurrenderJSON {
+  final bool error;
+  final String errorMsg;
+  final String lobbyId;
+
+  FrontendSurrenderJSON({
+    required this.error,
+    required this.errorMsg,
+    required this.lobbyId,
+  });
+
+  factory FrontendSurrenderJSON.fromJson(Map<String, dynamic> json) {
+    return FrontendSurrenderJSON(
+      error: json['error'] ?? false,
+      errorMsg: json['errorMsg'] ?? '',
+      lobbyId: json['lobbyId'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'error': error,
+      'errorMsg': errorMsg,
+      'lobbyId': lobbyId,
+    };
+  }
+}
