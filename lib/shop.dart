@@ -548,117 +548,78 @@ class _ShopScreenState extends State<ShopScreen> {
                 children: [
                   SizedBox(height: 70.0), // Space for profile bar
                   // Sort controls
+                  // Sort controls
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(12.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Sort by price:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          DropdownButton<String>(
-                            value: _sortOrder,
-                            underline: Container(),
-                            icon: Icon(Icons.sort),
-                            items: <String>[
-                              "Default",
-                              "Price: Low to High",
-                              "Price: High to Low",
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                _sortProducts(newValue);
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8.0),
-                  
-                  // Content scrollable area
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
-                      child: ListView.builder(
-                        itemCount: categories.length,
-                        itemBuilder: (context, index) {
-                          final category = categories[index];
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                child: Text(
-                                  category.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                              Text(
+                                "Sort by: ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
                                 ),
                               ),
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 0.85,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                ),
-                                itemCount: category.products.length,
-                                itemBuilder: (context, productIndex) {
-                                  final product = category.products[productIndex];
-
-                                  // Determine image path based on category
-                                  String imagePath;
-                                  if (category.name.toLowerCase().contains('avatar')) {
-                                    imagePath = 'assets/images/avatar/${product.url}.png';
-                                  } else {
-                                    imagePath = 'assets/images/background/${product.url}.png';
+                              DropdownButton<String>(
+                                value: _sortOrder,
+                                underline: Container(),
+                                icon: Icon(Icons.arrow_drop_down, color: Color(0xFF9D0514)),
+                                items: [
+                                  DropdownMenuItem<String>(
+                                    value: "Default",
+                                    child: Text("Default"),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: "Price: Low to High",
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text("Price "),
+                                        Icon(Icons.arrow_upward, size: 16),
+                                      ],
+                                    ),
+                                  ),
+                                  DropdownMenuItem<String>(
+                                    value: "Price: High to Low",
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text("Price "),
+                                        Icon(Icons.arrow_downward, size: 16),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    _sortProducts(newValue);
                                   }
-
-                                  return ShopItemCard(
-                                    name: product.name,
-                                    price: product.price,
-                                    imagePath: imagePath,
-                                    isBought: product.isBought,
-                                    userCoins: coins,
-                                    onBuy: () => buyItem(category.url, product.url),
-                                  );
                                 },
                               ),
-                              const SizedBox(height: 16),
                             ],
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  
                 ],
               ),
             ),
