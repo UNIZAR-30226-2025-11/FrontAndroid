@@ -592,7 +592,23 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                               Navigator.of(dialogContext).pop();
                             },
                             child: Container(
-                              // Rest of your card UI code
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.asset(
+                                  imagePath,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                           );
                         },
