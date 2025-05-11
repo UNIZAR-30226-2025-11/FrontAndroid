@@ -73,19 +73,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           'Cookie': 'access_token=$token',
         },
         body: jsonEncode({
-          'resp': {
-            'password': newPasswordController.text
-          }
+          'password': newPasswordController.text
         }),
       );
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Password changed')),
+          SnackBar(content: Text('Password changed successfully')),
+        );
+        
+        // Add a short delay before redirecting to give the user time to see the success message
+        await Future.delayed(Duration(seconds: 2));
+        
+        SessionManager.removeSessionData();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to change password')),
+          SnackBar(content: Text('Failed to change password: ${response.statusCode}')),
         );
       }
     } catch (e) {
