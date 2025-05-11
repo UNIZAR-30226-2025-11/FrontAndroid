@@ -27,12 +27,27 @@ class _ShopScreenState extends State<ShopScreen> {
   List<ShopCategory> categories = [];
   String username = '';
   final UserInfo userInfo = UserInfo();  // Create UserInfo instance
+  String _sortOrder = "Default"; // Default sort order
 
   @override
   void initState() {
     super.initState();
     username = widget.username;
     _initialize();
+  }
+
+    void _sortProducts(String order) {
+    setState(() {
+      _sortOrder = order;
+      for (var category in categories) {
+        if (order == "Price: Low to High") {
+          category.products.sort((a, b) => a.price.compareTo(b.price));
+        } else if (order == "Price: High to Low") {
+          category.products.sort((a, b) => b.price.compareTo(a.price));
+        }
+        // If "Default" is selected, we don't need to sort
+      }
+    });
   }
 
   Future<void> _initialize() async {
@@ -509,7 +524,7 @@ class _ShopScreenState extends State<ShopScreen> {
           children: [
             ...List.generate(
               15,
-                  (index) => Positioned(
+              (index) => Positioned(
                 left: (index * 67) % MediaQuery.of(context).size.width,
                 top: (index * 83) % MediaQuery.of(context).size.height,
                 child: Opacity(
@@ -529,62 +544,122 @@ class _ShopScreenState extends State<ShopScreen> {
 
             // Main content
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 70.0, 16.0, 16.0),
-                child: ListView.builder(
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: Text(
-                            category.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
+              child: Column(
+                children: [
+                  SizedBox(height: 70.0), // Space for profile bar
+                  // Sort controls
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(12.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Sort by price:",
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
                           ),
-                        ),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.85,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
+                          DropdownButton<String>(
+                            value: _sortOrder,
+                            underline: Container(),
+                            icon: Icon(Icons.sort),
+                            items: <String>[
+                              "Default",
+                              "Price: Low to High",
+                              "Price: High to Low",
+                            ].map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                _sortProducts(newValue);
+                              }
+                            },
                           ),
-                          itemCount: category.products.length,
-                          itemBuilder: (context, productIndex) {
-                            final product = category.products[productIndex];
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8.0),
+                  
+                  // Content scrollable area
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+                      child: ListView.builder(
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                child: Text(
+                                  category.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.85,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                                itemCount: category.products.length,
+                                itemBuilder: (context, productIndex) {
+                                  final product = category.products[productIndex];
 
-                            // Determine image path based on category
-                            String imagePath;
-                            if (category.name.toLowerCase().contains('avatar')) {
-                              imagePath = 'assets/images/avatar/${product.url}.png';
-                            } else {
-                              imagePath = 'assets/images/background/${product.url}.png';
-                            }
+                                  // Determine image path based on category
+                                  String imagePath;
+                                  if (category.name.toLowerCase().contains('avatar')) {
+                                    imagePath = 'assets/images/avatar/${product.url}.png';
+                                  } else {
+                                    imagePath = 'assets/images/background/${product.url}.png';
+                                  }
 
-                            return ShopItemCard(
-                              name: product.name,
-                              price: product.price,
-                              imagePath: imagePath,
-                              isBought: product.isBought,
-                              userCoins: coins,  // Pass the current coins
-                              onBuy: () => buyItem(category.url, product.url),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  },
-                ),
+                                  return ShopItemCard(
+                                    name: product.name,
+                                    price: product.price,
+                                    imagePath: imagePath,
+                                    isBought: product.isBought,
+                                    userCoins: coins,
+                                    onBuy: () => buyItem(category.url, product.url),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
