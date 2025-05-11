@@ -641,7 +641,9 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
   }
 
   Future<void> searchUsersInit() async {
-    setState(() {});
+    setState(() {
+      isSearching = true;
+    });
 
     try {
       final String? token = await SessionManager.getSessionData();
@@ -655,34 +657,48 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
       );
 
       if (response.statusCode == 200) {
-        print(response.body);
-        final List<dynamic> data = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        
+        // Verifica si data es una lista o un objeto con 'users'
+        final List<dynamic> usersData;
+        if (data is List) {
+          usersData = data;
+        } else if (data is Map && data.containsKey('users')) {
+          usersData = data['users'] as List;
+        } else {
+          throw Exception('Unexpected response format');
+        }
 
         setState(() {
-          users = data
+          users = usersData
               .where((user) => user['username'] != currentUsername)
               .where((user) => user['status'] == 'none')
-              .map((user) =>
-              Friend(
-                  username: user['username'],
-                  avatar: user['avatar'],
-                  status: user['status']
+              .map((user) => Friend(
+                  username: user['username'] ?? '',
+                  avatar: user['avatar'] ?? '',
+                  status: user['status'] ?? ''
               ))
               .toList();
+          isSearching = false;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to search users')),
+          SnackBar(content: Text('Failed to search users: ${response.statusCode}')),
         );
+        setState(() {
+          isSearching = false;
+        });
       }
     } catch (e) {
       print('Error in searchUsersInit: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+      setState(() {
+        isSearching = false;
+      });
     }
   }
-
 
   Future<void> searchUsers(String query) async {
     setState(() {
@@ -691,28 +707,38 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
 
     try {
       final String? token = await SessionManager.getSessionData();
+      final String? currentUsername = await SessionManager.getUsername();
+      
       final response = await http.get(
-          Uri.parse('$BACKEND_URL/users'), // sin query aquí
+          Uri.parse('$BACKEND_URL/users'),
           headers: {
             'Cookie': 'access_token=$token',
           });
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final allUsers = (data['users'] as List)
-            .where((user) => user['status'] == 'none')
-            .map((user) =>
-            Friend(
-              username: user['username'],
-              avatar: user['avatar'],
-              status: user['status'],
+        
+        // Verifica si data es una lista o un objeto con 'users'
+        final List<dynamic> usersData;
+        if (data is List) {
+          usersData = data;
+        } else if (data is Map && data.containsKey('users')) {
+          usersData = data['users'] as List;
+        } else {
+          throw Exception('Unexpected response format');
+        }
+        
+        // Filtramos usuarios por nombre y que no sean el usuario actual
+        final filteredUsers = usersData
+            .where((user) => 
+                user['username'] != currentUsername &&
+                user['status'] == 'none' &&
+                user['username'].toString().toLowerCase().contains(query.toLowerCase()))
+            .map((user) => Friend(
+                username: user['username'] ?? '',
+                avatar: user['avatar'] ?? '',
+                status: user['status'] ?? ''
             ))
-            .toList();
-
-        // ahora filtramos por el query localmente
-        final filteredUsers = allUsers
-            .where((user) =>
-            user.username.toLowerCase().contains(query.toLowerCase()))
             .toList();
 
         setState(() {
@@ -721,13 +747,14 @@ class _SearchUsersScreenState extends State<SearchUsersScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch users')),
+          SnackBar(content: Text('Failed to fetch users: ${response.statusCode}')),
         );
         setState(() {
           isSearching = false;
         });
       }
     } catch (e) {
+      print('Error in searchUsers: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
