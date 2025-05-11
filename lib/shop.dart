@@ -502,131 +502,200 @@ class _ShopScreenState extends State<ShopScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF9D0514),
-      // Remove the AppBar since we'll add the profile bar in the Stack
-      body: Container(
-        // Add background image if available
-        decoration: userInfo.backgroundUrl.isNotEmpty
-            ? BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
-            fit: BoxFit.cover,
-            opacity: 0.5,
-          ),
-        )
-            : null,
-        child: isLoading
-            ? Center(child: CircularProgressIndicator(color: Colors.white))
-            : Stack(
-          children: [
-            ...List.generate(
-              15,
-              (index) => Positioned(
-                left: (index * 67) % MediaQuery.of(context).size.width,
-                top: (index * 83) % MediaQuery.of(context).size.height,
-                child: Opacity(
-                  opacity: 0.3,
-                  child: index % 3 == 0
-                      ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
-                      : index % 3 == 1
-                      ? Icon(Icons.album, size: 25, color: Colors.purple[300]) // Bomb-like icon
-                      : Icon(Icons.pets, size: 20, color: Colors.purple[100]), // Cat-like icon
-                ),
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Color(0xFF9D0514),
+    body: Container(
+      // Add background image if available
+      decoration: userInfo.backgroundUrl.isNotEmpty
+          ? BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/background/${userInfo.backgroundUrl}.png'),
+                fit: BoxFit.cover,
+                opacity: 0.5,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 20.0), // Adjust as needed
-              child: userInfo.buildProfileBar(context, _openProfileDrawer),
-            ),
-
-            // Main content
-            SafeArea(
-              child: Column(
-                children: [
-                  SizedBox(height: 70.0), // Space for profile bar
-                  // Sort controls
-                  // Sort controls
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+            )
+          : null,
+      child: isLoading
+          ? Center(child: CircularProgressIndicator(color: Colors.white))
+          : Stack(
+              children: [
+                // Background decorative elements
+                ...List.generate(
+                  15,
+                  (index) => Positioned(
+                    left: (index * 67) % MediaQuery.of(context).size.width,
+                    top: (index * 83) % MediaQuery.of(context).size.height,
+                    child: Opacity(
+                      opacity: 0.3,
+                      child: index % 3 == 0
+                          ? Icon(Icons.circle, size: 20, color: Colors.purple[200])
+                          : index % 3 == 1
+                              ? Icon(Icons.album, size: 25, color: Colors.purple[300]) // Bomb-like icon
+                              : Icon(Icons.pets, size: 20, color: Colors.purple[100]), // Cat-like icon
+                    ),
+                  ),
+                ),
+                
+                // Profile bar
+                Padding(
+                  padding: const EdgeInsets.only(top: 20.0),
+                  child: userInfo.buildProfileBar(context, _openProfileDrawer),
+                ),
+                
+                // Main content area
+                SafeArea(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 70.0), // Space for profile bar
+                    child: Column(
                       children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(12.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
+                        // Adding extra space before the sort control
+                        SizedBox(height: 10.0),
+                        
+                        // Sort controls
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(12.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Sort by: ",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    DropdownButton<String>(
+                                      value: _sortOrder,
+                                      underline: Container(),
+                                      icon: Icon(Icons.arrow_drop_down, color: Color(0xFF9D0514)),
+                                      items: [
+                                        DropdownMenuItem<String>(
+                                          value: "Default",
+                                          child: Text("Default"),
+                                        ),
+                                        DropdownMenuItem<String>(
+                                          value: "Price: Low to High",
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text("Price "),
+                                              Icon(Icons.arrow_upward, size: 16),
+                                            ],
+                                          ),
+                                        ),
+                                        DropdownMenuItem<String>(
+                                          value: "Price: High to Low",
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text("Price "),
+                                              Icon(Icons.arrow_downward, size: 16),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged: (String? newValue) {
+                                        if (newValue != null) {
+                                          _sortProducts(newValue);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Sort by: ",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              DropdownButton<String>(
-                                value: _sortOrder,
-                                underline: Container(),
-                                icon: Icon(Icons.arrow_drop_down, color: Color(0xFF9D0514)),
-                                items: [
-                                  DropdownMenuItem<String>(
-                                    value: "Default",
-                                    child: Text("Default"),
-                                  ),
-                                  DropdownMenuItem<String>(
-                                    value: "Price: Low to High",
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text("Price "),
-                                        Icon(Icons.arrow_upward, size: 16),
-                                      ],
+                        ),
+                        
+                        SizedBox(height: 16.0),
+                        
+                        // Lista de categorías y productos (IMPORTANTE - Esta parte faltaba)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: ListView.builder(
+                              itemCount: categories.length,
+                              itemBuilder: (context, index) {
+                                final category = categories[index];
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                                      child: Text(
+                                        category.name,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  DropdownMenuItem<String>(
-                                    value: "Price: High to Low",
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text("Price "),
-                                        Icon(Icons.arrow_downward, size: 16),
-                                      ],
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        childAspectRatio: 0.85,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                      ),
+                                      itemCount: category.products.length,
+                                      itemBuilder: (context, productIndex) {
+                                        final product = category.products[productIndex];
+
+                                        // Determine image path based on category
+                                        String imagePath;
+                                        if (category.name.toLowerCase().contains('avatar')) {
+                                          imagePath = 'assets/images/avatar/${product.url}.png';
+                                        } else {
+                                          imagePath = 'assets/images/background/${product.url}.png';
+                                        }
+
+                                        return ShopItemCard(
+                                          name: product.name,
+                                          price: product.price,
+                                          imagePath: imagePath,
+                                          isBought: product.isBought,
+                                          userCoins: coins,
+                                          onBuy: () => buyItem(category.url, product.url),
+                                        );
+                                      },
                                     ),
-                                  ),
-                                ],
-                                onChanged: (String? newValue) {
-                                  if (newValue != null) {
-                                    _sortProducts(newValue);
-                                  }
-                                },
-                              ),
-                            ],
+                                    const SizedBox(height: 16),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class ShopCategory {
