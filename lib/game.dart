@@ -421,28 +421,62 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       setState(() {
         BackendGameSelectPlayerJSON selectPlayerData =
         BackendGameSelectPlayerJSON.fromJson(data);
-        int timeLeft = selectPlayerData.timeOut;
+        int initialTimeLeft = (selectPlayerData.timeOut / 1000).round();
 
         List<PlayerJSON> currentPlayers = List.from(players); // snapshot
 
         print('Players in dialog: ${currentPlayers.map((p) => p.playerUsername)}');
 
+        // Create a counter for countdown
+        int timeLeft = initialTimeLeft;
+        Timer? countdownTimer;
+
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) {
+          builder: (BuildContext dialogContext) {
+            // Start the countdown timer
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+              if (timeLeft > 0) {
+                timeLeft--;
+                // Force dialog to rebuild with updated time
+                (dialogContext as Element).markNeedsBuild();
+              } else {
+                // Time's up, send default response and close dialog
+                timer.cancel();
+                if (currentPlayers.isNotEmpty) {
+                  FrontendGameSelectPlayerResponseJSON response =
+                  FrontendGameSelectPlayerResponseJSON(
+                    error: false,
+                    errorMsg: "",
+                    playerUsername: currentPlayers[0].playerUsername,
+                    lobbyId: widget.lobbyId,
+                  );
+                  socket.emit('game-select-player', response.toJson());
+                }
+                Navigator.of(dialogContext).pop();
+              }
+            });
+
             return AlertDialog(
               title: Text('Select a Player'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Time left: $timeLeft seconds'),
+                  Text('Time left: $timeLeft seconds',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: timeLeft <= 5 ? Colors.red : null,
+                      )),
                   SizedBox(height: 10),
                   Column(
                     children: currentPlayers.map((player) {
                       return ListTile(
                         title: Text(player.playerUsername),
                         onTap: () {
+                          // Cancel timer
+                          countdownTimer?.cancel();
+                          
                           // Send selected player back to the server
                           FrontendGameSelectPlayerResponseJSON response =
                           FrontendGameSelectPlayerResponseJSON(
@@ -454,7 +488,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                           print('Selected player to send: ${player.playerUsername}');
                           socket.emit('game-select-player', response.toJson());
 
-                          Navigator.of(context).pop();
+                          Navigator.of(dialogContext).pop();
                         },
                       );
                     }).toList(),
@@ -463,7 +497,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             );
           },
-        );
+        ).then((_) {
+          // Ensure timer is canceled if dialog is dismissed
+          countdownTimer?.cancel();
+        });
       });
     });
 
@@ -472,19 +509,36 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       setState(() {
         BackendGameSelectCardJSON selectCardData =
         BackendGameSelectCardJSON.fromJson(data);
-        int timeLeft = selectCardData.timeOut;
+        int initialTimeLeft = (selectCardData.timeOut / 1000).round();
+        
+        // Create a counter for countdown
+        int timeLeft = initialTimeLeft;
+        Timer? countdownTimer;
 
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) {
+          builder: (BuildContext dialogContext) {
+            // Start the countdown timer
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+              if (timeLeft > 0) {
+                timeLeft--;
+                // Force dialog to rebuild with updated time
+                (dialogContext as Element).markNeedsBuild();
+              } else {
+                // Time's up, close dialog
+                timer.cancel();
+                Navigator.of(dialogContext).pop();
+              }
+            });
+
             return Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Container(
-                width: 300, // You can adjust this width as needed
-                height: 450, // And the height too
+                width: 300,
+                height: 450,
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -502,7 +556,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     Center(
                       child: Text(
                         'Time left: $timeLeft seconds',
-                        style: TextStyle(color: Colors.grey[700]),
+                        style: TextStyle(
+                          color: timeLeft <= 5 ? Colors.red : Colors.grey[700],
+                          fontWeight: timeLeft <= 5 ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -521,6 +578,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
                           return GestureDetector(
                             onTap: () {
+                              // Cancel the timer
+                              countdownTimer?.cancel();
+                              
                               FrontendGameSelectCardResponseJSON response =
                               FrontendGameSelectCardResponseJSON(
                                 error: false,
@@ -529,40 +589,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                                 lobbyId: widget.lobbyId,
                               );
                               socket.emit('game-select-card', response.toJson());
-                              Navigator.of(context).pop();
+                              Navigator.of(dialogContext).pop();
                             },
                             child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey),
-                              ),
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(10),
-                                      ),
-                                      child: Image.asset(
-                                        imagePath,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      card.type,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      overflow: TextOverflow.ellipsis, // Truncate with ellipsis if text is too long
-                                      maxLines: 1, // Ensure it stays on a single line
-                                      textAlign: TextAlign.center, // Center the text
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              // Rest of your card UI code
                             ),
                           );
                         },
@@ -573,7 +603,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             );
           },
-        );
+        ).then((_) {
+          // Ensure timer is canceled if dialog is dismissed
+          countdownTimer?.cancel();
+        });
       });
     });
 
@@ -582,12 +615,29 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       setState(() {
         BackendGameSelectCardTypeJSON selectCardTypeData =
         BackendGameSelectCardTypeJSON.fromJson(data);
-        int timeLeft = selectCardTypeData.timeOut;
+        int initialTimeLeft = (selectCardTypeData.timeOut / 1000).round();
+        
+        // Create a counter for countdown
+        int timeLeft = initialTimeLeft;
+        Timer? countdownTimer;
 
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (BuildContext context) {
+          builder: (BuildContext dialogContext) {
+            // Start the countdown timer
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+              if (timeLeft > 0) {
+                timeLeft--;
+                // Force dialog to rebuild with updated time
+                (dialogContext as Element).markNeedsBuild();
+              } else {
+                // Time's up, close dialog
+                timer.cancel();
+                Navigator.of(dialogContext).pop();
+              }
+            });
+
             return Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -612,75 +662,22 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     Center(
                       child: Text(
                         'Time left: $timeLeft seconds',
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Expanded(
-                      child: GridView.builder(
-                        itemCount: CardType.values.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 1.0,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
+                        style: TextStyle(
+                          color: timeLeft <= 5 ? Colors.red : Colors.grey[700],
+                          fontWeight: timeLeft <= 5 ? FontWeight.bold : FontWeight.normal,
                         ),
-                        itemBuilder: (context, index) {
-                          CardType cardType = CardType.values[index];
-                          String typeName =
-                              cardType.toString().split('.').last;
-                          String imagePath = 'assets/images/$typeName.jpg';
-
-                          return GestureDetector(
-                            onTap: () {
-                              FrontendGameSelectCardTypeResponseJSON response =
-                              FrontendGameSelectCardTypeResponseJSON(
-                                error: false,
-                                errorMsg: "",
-                                cardType: typeName,
-                                lobbyId: widget.lobbyId,
-                              );
-                              socket.emit('game-select-card-type', response.toJson());
-
-                              Navigator.of(context).pop();
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey),
-                                color: Colors.white,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    imagePath,
-                                    height: 80,
-                                    width: 80,
-                                    fit: BoxFit.contain,
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    typeName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
                       ),
                     ),
+                    // Rest of your UI code
                   ],
                 ),
               ),
             );
           },
-        );
+        ).then((_) {
+          // Ensure timer is canceled if dialog is dismissed
+          countdownTimer?.cancel();
+        });
       });
     });
 
@@ -688,16 +685,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     socket.on('game-select-nope', (data) {
       setState(() {
         BackendGameSelectNopeJSON nopeData = BackendGameSelectNopeJSON.fromJson(data);
-        int timeLeft = nopeData.timeOut;
-        bool hasNopeCard = playerCards.any((card) => card.type == 'Nope'); // This should be based on the player's actual card availability
+        int initialTimeLeft = (nopeData.timeOut / 1000).round();
+        bool hasNopeCard = playerCards.any((card) => card.type == 'Nope');
         String nopeAction = nopeData.nopeAction;
 
         // Check if the player has a Nope card
         if (!hasNopeCard) {
-          // Print and emit response for not using the Nope card
-          print('Player does not have a Nope card.');
-
-          // Emit that the player doesn't want to use the Nope card
+          // Emit response for not using the Nope card
           FrontendGameSelectNopeResponseJSON response = FrontendGameSelectNopeResponseJSON(
             error: false,
             errorMsg: "",
@@ -705,14 +699,38 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             lobbyId: widget.lobbyId,
           );
           socket.emit('game-select-nope', response.toJson());
-          return; // Exit the function since we don't need to show the dialog
+          return;
         }
 
-        // If the player has a Nope card, show the dialog
+        // Create a counter for countdown
+        int timeLeft = initialTimeLeft;
+        Timer? countdownTimer;
+        
+        // Show the dialog with updating timer
         showDialog(
           context: context,
-          barrierDismissible: false, // Prevent dismissing by tapping outside
-          builder: (BuildContext context) {
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            // Start the countdown timer
+            countdownTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+              if (timeLeft > 0) {
+                timeLeft--;
+                // Force dialog to rebuild with updated time
+                (dialogContext as Element).markNeedsBuild();
+              } else {
+                // Time's up, send default response and close dialog
+                timer.cancel();
+                FrontendGameSelectNopeResponseJSON response = FrontendGameSelectNopeResponseJSON(
+                  error: false,
+                  errorMsg: "",
+                  useNope: false,
+                  lobbyId: widget.lobbyId,
+                );
+                socket.emit('game-select-nope', response.toJson());
+                Navigator.of(dialogContext).pop();
+              }
+            });
+
             return AlertDialog(
               title: Text('Play Nope Card?'),
               content: Column(
@@ -723,7 +741,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   Text('Do you want to play your Nope card?'),
                   SizedBox(height: 10),
                   Text('Time left: $timeLeft seconds',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: timeLeft <= 5 ? Colors.red : null,
+                      )),
                   SizedBox(height: 10),
                 ],
               ),
@@ -731,44 +752,45 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 TextButton(
                   child: Text('No'),
                   onPressed: () {
-                    FrontendGameSelectNopeResponseJSON response =
-                    FrontendGameSelectNopeResponseJSON(
+                    // Cancel the timer
+                    countdownTimer?.cancel();
+                    
+                    FrontendGameSelectNopeResponseJSON response = FrontendGameSelectNopeResponseJSON(
                       error: false,
                       errorMsg: "",
                       useNope: false,
                       lobbyId: widget.lobbyId,
                     );
                     socket.emit('game-select-nope', response.toJson());
-
-                    // Close the dialog
-                    Navigator.of(context).pop();
+                    Navigator.of(dialogContext).pop();
                   },
                 ),
                 TextButton(
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.red.shade100,
                   ),
-                  child: Text('Yes, use Nope!',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('Yes, use Nope!', style: TextStyle(fontWeight: FontWeight.bold)),
                   onPressed: () {
-                    // Send response with useNope = true
-                    FrontendGameSelectNopeResponseJSON response =
-                    FrontendGameSelectNopeResponseJSON(
+                    // Cancel the timer
+                    countdownTimer?.cancel();
+                    
+                    FrontendGameSelectNopeResponseJSON response = FrontendGameSelectNopeResponseJSON(
                       error: false,
                       errorMsg: "",
                       useNope: true,
                       lobbyId: widget.lobbyId,
                     );
                     socket.emit('game-select-nope', response.toJson());
-
-                    // Close the dialog
-                    Navigator.of(context).pop();
+                    Navigator.of(dialogContext).pop();
                   },
                 ),
               ],
             );
           },
-        );
+        ).then((_) {
+          // Ensure timer is canceled if dialog is dismissed
+          countdownTimer?.cancel();
+        });
       });
     });
 
@@ -1251,6 +1273,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     _isChatVisible = !_isChatVisible;
                     if (_isChatVisible) {
                       _lastReadMessageIndex = _messages.length - 1;
+                    }else{
+                      FocusScope.of(context).unfocus();
                     }
                   });
                 },
@@ -1704,7 +1728,7 @@ void showCardPopup(BuildContext context, List<String> cardImagePaths) {
     },
   );
 
-  Future.delayed(const Duration(seconds: 3), () {
+  Future.delayed(const Duration(seconds: 2), () {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
@@ -1882,7 +1906,7 @@ class _BombExplosionDialogState extends State<BombExplosionDialog>
             });
 
             // Auto-dismiss after 2 more seconds
-            Future.delayed(const Duration(seconds: 3), () {
+            Future.delayed(const Duration(seconds: 2), () {
               if (mounted) Navigator.of(context).pop();
             });
           }
@@ -1943,7 +1967,7 @@ class BombDiffusedDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Schedule dialog to close after 2 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 2), () {
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     });
 
@@ -1982,7 +2006,7 @@ class FutureSeenDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Close the dialog after 1 second
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       Navigator.of(context).pop();
     });
 
@@ -2007,7 +2031,7 @@ class AttackDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2038,7 +2062,7 @@ class SkipDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2069,7 +2093,7 @@ class FavorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2100,7 +2124,7 @@ class TwoWildDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -2131,7 +2155,7 @@ class ThreeWildDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Auto-close the dialog after 1 second
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 2), () {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
