@@ -115,61 +115,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
   }
 
-  Future<String?> _initializeUsername() async {
-    try {
-      final String? user = await SessionManager.getUsername();
-      setState(() {
-        username = user ?? ""; // Actualiza el username cuando esté disponible
-
-      });
-      return user;
-    } catch (e) {
-      print("Error initializing username: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Username error: $e"))
-      );
-      return "";
-    }
-  }
-
-  Future<void> _initializeCoins() async {
-    try {
-      final String? token = await SessionManager.getSessionData();
-      final res = await http.get(
-          Uri.parse('$BACKEND_URL/user'),
-          headers: {
-            'Cookie': 'access_token=$token',
-          }
-      );
-
-      print('Current username: $username');
-      final data = jsonDecode(res.body);
-
-      if (res.statusCode != 200) {
-        var errorMessage = data.containsKey('message')
-            ? data['message']
-            : "Something went wrong. Try later";
-
-        print(errorMessage);
-        return;
-      } else {
-
-        // Use setState to update the UI
-        setState(() {
-          coins = int.parse(data['coins'].toString());
-        });
-        print("Found user, coins: $coins");
-      }
-    } catch (e) {
-      print("Error initializing coins: $e");
-      if (mounted) {  // Check if widget is still mounted
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Coins error: $e"))
-        );
-      }
-    }
-  }
-
   void setupSocketListeners() {
     socket.off('game-state');
     socket.on('game-state', (data) {
@@ -1116,7 +1061,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             ),
             Positioned(
-              top:330,
+              top:340,
               left: MediaQuery.of(context).size.width / 2 - 60,
               child: buildDeckCountDisplay(),
             ),
@@ -1130,14 +1075,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             if (players.length >= 2)
               Positioned(
-                bottom: 400,
+                bottom: 370,
                 left: 15,
                 child: buildPlayerCard(players[1],
                     isCurrentTurn: players[1].playerUsername == turnUsername),
               ),
             if (players.length >= 3)
               Positioned(
-                bottom: 400,
+                bottom: 370,
                 right: 15,
                 child: buildPlayerCard(players[2],
                     isCurrentTurn: players[2].playerUsername == turnUsername),
@@ -1411,7 +1356,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                                     style: TextStyle(color: Colors.grey),
                                   ),
                                 )
-                              : ListView.builder(
+                              : // ListView.builder for messages
+                                ListView.builder(
                                   controller: _chatScrollController,
                                   padding: EdgeInsets.all(10),
                                   itemCount: _messages.length,
@@ -1422,11 +1368,44 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                                     return Padding(
                                       padding: EdgeInsets.only(bottom: 8),
                                       child: Align(
-                                        alignment: isMe
-                                            ? Alignment.centerRight
-                                            : Alignment.centerLeft,
+                                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                                         child: Container(
-                                          // Resto del código existente para mostrar mensajes
+                                          constraints: BoxConstraints(
+                                            maxWidth: MediaQuery.of(context).size.width * 0.7,
+                                          ),
+                                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            color: isMe ? Color(0xFF9D0514).withOpacity(0.8) : Color(0xFF3D0E40).withOpacity(0.8),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              if (!isMe)
+                                                Text(
+                                                  message.username,
+                                                  style: TextStyle(
+                                                    color: Colors.white70,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              SizedBox(height: !isMe ? 4 : 0),
+                                              Text(
+                                                message.msg,
+                                                style: TextStyle(color: Colors.white),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                _formatDate(message.date),
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 10,
+                                                ),
+                                                textAlign: TextAlign.right,
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );
@@ -1713,7 +1692,7 @@ void showCardPopup(BuildContext context, List<String> cardImagePaths) {
               mainAxisAlignment: MainAxisAlignment.center,
               children: cardImagePaths.map((path) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: Image.asset(path, width: 80, height: 120),
                 );
               }).toList(),
